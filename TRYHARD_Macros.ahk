@@ -1,18 +1,37 @@
 #Requires AutoHotkey v2.0
 
-global DebugEnabled := false
-global HotkeyBST := "F1"
-global HotkeyReload := "F2"
-global KeyHold := 50
-global KeyDelay := 50
-global SCRIPT_NAME := "TRYHARD_Macros.ahk"
-global SCRIPT_TITLE := "TRYHARD Macros"
-global WAITING_GTA_WINDOW_TIMER := 5
 
-MyGui := Gui()
-MyGui.Title := SCRIPT_TITLE
+; Globals
+HotkeyBST := "F1"
+HotkeyReload := "F2"
+KeyHold := 50
+KeyDelay := 50
 
-MyGui.Opt("+AlwaysOnTop")  ; +Owner avoids a taskbar button.
+; Constants
+DEBUG_ENABLED := false
+
+SCRIPT_NAME := "TRYHARD_Macros.ahk"
+SCRIPT_TITLE := "TRYHARD Macros"
+
+TOOLTIP_DISPLAY_TIME := 250
+TOOLTIP_HIDE_TIME := 3000
+
+KEY_HOLD_VERY_SLOW := 100
+KEY_HOLD_SLOW := 74
+KEY_HOLD_NORMAL := 50
+KEY_HOLD_FAST := 35
+KEY_HOLD_VERY_FAST := 25
+
+KEY_DELAY_VERY_SLOW := 100
+KEY_DELAY_SLOW := 74
+KEY_DELAY_NORMAL := 50
+KEY_DELAY_FAST := 35
+KEY_DELAY_VERY_FAST := 25
+
+WAITING_GTA_WINDOW_TIMER := 5
+
+MSGBOX_SYSTEM_MODAL := 4096
+
 
 On_WM_MOUSEMOVE(wParam, lParam, msg, Hwnd) {
     static PrevHwnd := 0
@@ -21,11 +40,11 @@ On_WM_MOUSEMOVE(wParam, lParam, msg, Hwnd) {
         CurrControl := GuiCtrlFromHwnd(Hwnd)
         if CurrControl {
             if !CurrControl.HasProp("ToolTip") {
-                return ; No tooltip for this control.
+                return
             }
             Text := CurrControl.ToolTip
-            SetTimer () => ToolTip(Text), -250
-            SetTimer () => ToolTip(), -3000 ; Remove the tooltip.
+            SetTimer () => ToolTip(Text), -TOOLTIP_DISPLAY_TIME
+            SetTimer () => ToolTip(), -TOOLTIP_HIDE_TIME
         }
 
         PrevHwnd := Hwnd
@@ -44,60 +63,9 @@ Pluralize(count, singular, plural := "") {
 }
 
 CustomOutputDebug(str) {
-    if DebugEnabled {
+    if DEBUG_ENABLED {
         OutputDebug("[" . SCRIPT_NAME . "]: " str)
     }
-}
-
-/*
-Checks if a window with the title "Grand Theft Auto V" and process name "GTA5.exe" exists.
-Returns the first PID found, otherwise false.
-*/
-GetGTAPid() {
-    SetTitleMatchMode(3) ; Exact match mode
-    for Hwnd in WinGetList("Grand Theft Auto V") {
-        GTAPid := WinGetPID(Hwnd)
-        ProcessName := ProcessGetName(GTAPid)
-
-        if (ProcessName == "GTA5.exe" && WinExist("ahk_pid " GTAPid)) {
-            return GTAPid
-        }
-    }
-    return false
-}
-
-/*
-Checks if a window with the title "Grand Theft Auto V" and process name "GTA5.exe" is active.
-If not, displays an error message and returns false.
-*/
-CheckGTAWindowActive() {
-    GTAPid := GetGTAPid()
-
-    if !GTAPid {
-        MsgBox(
-            'ERROR: Unable to find a window titled "Grand Theft Auto V" with process name "GTA5.exe".',
-            SCRIPT_TITLE,
-            "OK Icon! 4096"
-        )
-        return false
-    }
-
-    CustomOutputDebug("Waiting for window activation ...")
-
-    if !WinActive("ahk_pid " GTAPid) {
-        if !WinWaitActive("ahk_pid " GTAPid, , WAITING_GTA_WINDOW_TIMER) {
-            MsgBox(
-                'ERROR: Window titled "Grand Theft Auto V" with process name "GTA5.exe" did not become active within ' . WAITING_GTA_WINDOW_TIMER . ' ' . Pluralize(WAITING_GTA_WINDOW_TIMER, "second") . '.',
-                SCRIPT_TITLE,
-                "OK Icon! 4096"
-            )
-            return false
-        }
-
-        Sleep(1000) ; Wait for 1 second after the window becomes active
-    }
-
-    return GTAPid
 }
 
 ; Function to center a GUI element
@@ -153,33 +121,142 @@ SetDelay(*) {
     global KeyDelay, KeyHold
 
     speed := SpeedDropdown.Text
+
     switch speed {
-        case "Very Slow: 100ms":
-            KeyDelay := 100
-            KeyHold := 100
-        case "Slow: 75ms":
-            KeyDelay := 75
-            KeyHold := 75
-        case "Normal; 50ms":
-            KeyDelay := 50
-            KeyHold := 50
-        case "Fast; 35ms":
+        case "Very Slow: " . KEY_DELAY_VERY_SLOW . "ms":
+            KeyDelay := KEY_DELAY_VERY_SLOW
+            KeyHold := KEY_HOLD_VERY_SLOW
+        case "Slow: " . KEY_DELAY_SLOW . "ms":
+            KeyDelay := KEY_DELAY_SLOW
+            KeyHold := KEY_HOLD_SLOW
+        case "Normal; " . KEY_DELAY_NORMAL . "ms":
+            KeyDelay := KEY_DELAY_NORMAL
+            KeyHold := KEY_HOLD_NORMAL
+        case "Fast; " . KEY_DELAY_FAST . "ms":
+            KeyDelay := KEY_DELAY_FAST
+            KeyHold := KEY_HOLD_FAST
             MsgBox(
                 "This method is only recommended in small lobbies, with a limited number of players, as it may not work consistently otherwise.",
                 SCRIPT_TITLE,
-                "OK Iconi 4096"
+                "OK Iconi " . MSGBOX_SYSTEM_MODAL
             )
-            KeyDelay := 35
-            KeyHold := 35
-        case "Very Fast: 25ms":
+        case "Very Fast: " . KEY_DELAY_VERY_FAST . "ms":
+            KeyDelay := KEY_DELAY_VERY_FAST
+            KeyHold := KEY_HOLD_VERY_FAST
             MsgBox(
                 "This method is only recommended in invite-only sessions with a very limited number of players, as it may not work consistently otherwise.",
                 SCRIPT_TITLE,
-                "OK Iconi 4096"
+                "OK Iconi " . MSGBOX_SYSTEM_MODAL
             )
-            KeyDelay := 25
-            KeyHold := 25
     }
+}
+
+ApplyHotkeyBST(*) {
+    global HotkeyBST
+
+    try {
+        ; Remove any previous hotkey assignment
+        Hotkey(HotkeyBST, "Off", "Off")
+
+        HotkeyBST := HotkeyBST_Input.Value
+        Hotkey(HotkeyBST, DropBST)
+        Hotkey(HotkeyBST, "On", "On")
+    } catch error as err {
+        if (err.what == "Hotkey" && err.message == "Invalid key name.") {
+            MsgBox(
+                "Error: Hotkey is an invalid key name.",
+                SCRIPT_TITLE,
+                "OK Icon! " . MSGBOX_SYSTEM_MODAL
+            )
+            return false
+        }
+        throw err
+    }
+
+    return true
+}
+
+ApplyHotkeyReload(*) {
+    global HotkeyReload
+
+    try {
+        ; Remove any previous hotkey assignment
+        Hotkey(HotkeyReload, "Off", "Off")
+
+        HotkeyReload := HotkeyReload_Input.Value
+        Hotkey(HotkeyReload, ReloadAllWeapons)
+        Hotkey(HotkeyReload, "On", "On")
+    } catch error as err {
+        if (err.what == "Hotkey" && err.message == "Invalid key name.") {
+            MsgBox(
+                "Error: Hotkey is an invalid key name.",
+                SCRIPT_TITLE,
+                "OK Icon! " . MSGBOX_SYSTEM_MODAL
+            )
+            return false
+        }
+        throw err
+    }
+
+    return true
+}
+
+openRepo(*) {
+    Run("https://github.com/Illegal-Services/TRYHARD_GTA_Macros")
+}
+
+/*
+Checks if a window with the title "Grand Theft Auto V" and process name "GTA5.exe" exists.
+Returns the first PID found, otherwise false.
+*/
+GetGTAPid() {
+    SetTitleMatchMode(3) ; Exact match mode
+    for Hwnd in WinGetList("Grand Theft Auto V") {
+        GTAPid := WinGetPID(Hwnd)
+        ProcessName := ProcessGetName(GTAPid)
+
+        if (ProcessName == "GTA5.exe" && WinExist("ahk_pid " GTAPid)) {
+            return GTAPid
+        }
+    }
+    return false
+}
+
+/*
+Validates if the "Grand Theft Auto V" window (with the process "GTA5.exe") is active.
+- If the window or process is not found, an error message is shown and false is returned.
+- If the window is not active, it waits for the window to become active within a given time.
+- If the window doesn't become active within the specified time, an error message is shown.
+- Returns the process ID (PID) of the window if active, or false if not.
+*/
+CheckGTAWindowActive() {
+    GTAPid := GetGTAPid()
+
+    if !GTAPid {
+        MsgBox(
+            'ERROR: Unable to find a window titled "Grand Theft Auto V" with process name "GTA5.exe".',
+            SCRIPT_TITLE,
+            "OK Icon! " . MSGBOX_SYSTEM_MODAL
+        )
+        return false
+    }
+
+    CustomOutputDebug("Waiting for window activation ...")
+
+    if !WinActive("ahk_pid " GTAPid) {
+        if !WinWaitActive("ahk_pid " GTAPid, , WAITING_GTA_WINDOW_TIMER) {
+            MsgBox(
+                'ERROR: Window titled "Grand Theft Auto V" with process name "GTA5.exe" did not become active within ' . WAITING_GTA_WINDOW_TIMER . ' ' . Pluralize(WAITING_GTA_WINDOW_TIMER, "second") . '.',
+                SCRIPT_TITLE,
+                "OK Icon! " . MSGBOX_SYSTEM_MODAL
+            )
+            return false
+        }
+
+        Sleep(1000) ; Wait for 1 second after the window becomes active
+    }
+
+    return GTAPid
 }
 
 ; Define a function to send key press, hold, and release
@@ -193,15 +270,33 @@ SendKeyWithDelay(count, key, holdTime, releaseTime) {
     }
 }
 
-; Define the "Drop BST" function to simulate the sequence of keys
-DropBST(*) {
+/*
+Processes a sequence of keystrokes.
+Accepts a list of key actions with count, key, holdTime, and releaseTime.
+*/
+ProcessGTAKeyStrokes(KeyStrokes) {
     GTAPid := CheckGTAWindowActive()
     if !GTAPid {
-        return
+        return false
     }
 
-    ; Create a list of key actions and delays
-    KeyStrokes := [
+    for KeyStroke in KeyStrokes {
+        if (!WinExist("ahk_pid " GTAPid) || !WinActive("ahk_pid " GTAPid) || !ProcessGetName(GTAPid) == "GTA5.exe") {
+            MsgBox(
+                'ERROR: "GTA5.exe" is no longer running, aborting process.',
+                SCRIPT_TITLE,
+                "OK Icon! " . MSGBOX_SYSTEM_MODAL
+            )
+            return false
+        }
+
+        SendKeyWithDelay(KeyStroke.count, KeyStroke.key, KeyStroke.hold, KeyStroke.delay)
+    }
+    return true
+}
+
+DropBST(*) {
+    BST_KeyStrokes := [
         { count: 1, key: ",", hold: KeyHold, delay: KeyDelay * 20 },
         ; in Interaction Menu
         { count: 1, key: "Enter", hold: KeyHold, delay: KeyDelay * 5 },
@@ -214,26 +309,11 @@ DropBST(*) {
         ; select Drop Bull Shark
     ]
 
-    ; Process each action while GTA is running
-    for KeyStroke in KeyStrokes {
-        if (!WinExist("ahk_pid " GTAPid) || !WinActive("ahk_pid " GTAPid)) {
-            MsgBox('ERROR: "GTA5.exe" is no longer running, aborting BST Drop.', SCRIPT_TITLE, "OK Icon! 4096")
-            return
-        }
-
-        SendKeyWithDelay(KeyStroke.count, KeyStroke.key, KeyStroke.hold, KeyStroke.delay)
-    }
+    ProcessGTAKeyStrokes(BST_KeyStrokes)
 }
 
-; Define the "Reload All Weapons" function to simulate the sequence of keys
 ReloadAllWeapons(*) {
-    GTAPid := CheckGTAWindowActive()
-    if !GTAPid {
-        return
-    }
-
-    ; Create a list of key actions and delays
-    KeyStrokes := [
+    Reload_KeyStrokes := [
         { count: 1, key: ",", hold: KeyHold, delay: KeyDelay * 20 },
         ; in Interaction Menu
         { count: 4, key: "Down", hold: KeyHold, delay: KeyDelay },
@@ -250,70 +330,22 @@ ReloadAllWeapons(*) {
         { count: 1, key: ",", hold: KeyHold, delay: 0 }
     ]
 
-    ; Process each action while GTA is running
-    for KeyStroke in KeyStrokes {
-        if (!WinExist("ahk_pid " GTAPid) || !WinActive("ahk_pid " GTAPid)) {
-            MsgBox('ERROR: "GTA5.exe" is no longer running, aborting BST Drop.', SCRIPT_TITLE, "OK Icon! 4096")
-            return
-        }
-
-        SendKeyWithDelay(KeyStroke.count, KeyStroke.key, KeyStroke.hold, KeyStroke.delay)
-    }
+    ProcessGTAKeyStrokes(Reload_KeyStrokes)
 }
 
-ApplyHotkeyBST(*) {
-    global HotkeyBST
 
-    try {
-        HotkeyBST := HotkeyBST_Input.Value
-        Hotkey(HotkeyBST, DropBST)
-    } catch error as err {
-        if (err.what == "Hotkey" && err.message == "Invalid key name.") {
-            MsgBox(
-                "Error: Hotkey is an invalid key name.",
-                SCRIPT_TITLE,
-                "OK Icon! 4096"
-            )
-            return false
-        }
-        throw Error(err)
-    }
+MyGui := Gui()
+MyGui.Title := SCRIPT_TITLE
 
-    return true
-}
-
-ApplyHotkeyReload(*) {
-    global HotkeyReload
-
-    try {
-        HotkeyReload := HotkeyReload_Input.Value
-        Hotkey(HotkeyReload, ReloadAllWeapons)
-    } catch error as err {
-        if (err.what == "Hotkey" && err.message == "Invalid key name.") {
-            MsgBox(
-                "Error: Hotkey is an invalid key name.",
-                SCRIPT_TITLE,
-                "OK Icon! 4096"
-            )
-            return false
-        }
-        throw Error(err)
-    }
-
-    return true
-}
-
-openRepo(*) {
-    Run("https://github.com/Illegal-Services/TRYHARD_GTA_Macros")
-}
+MyGui.Opt("+AlwaysOnTop")  ; +Owner avoids a taskbar button.
 
 Speed_Text := MyGui.AddText(, "Select Macro Speed:")
 SpeedDropdown := MyGui.AddDropDownList(, [
-    "Very Slow: 100ms",
-    "Slow: 75ms",
-    "Normal; 50ms",
-    "Fast; 35ms",
-    "Very Fast: 25ms",
+    "Very Slow: " . KEY_DELAY_VERY_SLOW . "ms",
+    "Slow: " . KEY_DELAY_SLOW . "ms",
+    "Normal; " . KEY_DELAY_NORMAL . "ms",
+    "Fast; " . KEY_DELAY_FAST . "ms",
+    "Very Fast: " . KEY_DELAY_VERY_FAST . "ms",
 ])
 SpeedDropdown.Choose(3)
 SpeedDropdown.OnEvent("Change", SetDelay)
