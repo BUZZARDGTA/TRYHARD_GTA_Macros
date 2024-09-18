@@ -1,6 +1,6 @@
 #Requires AutoHotkey v2.0
 
-global DebugEnabled := true
+global DebugEnabled := false
 global HotkeyBST := "F1"
 global HotkeyReload := "F2"
 global KeyHold := 50
