@@ -4,8 +4,8 @@ GTA Macros for TRYHARD players using AutoHotkey v2.
 
 # Known Bug
 
-- I've noticed that the script won't work if the "Rockstar Games Launcher" is open. Simply close it, and everything should work fine.
-- Occasionally, "Drop BST" may navigate to another menu instead of executing as expected. If this happens, try again or consider lowering the "Macro Speed" setting.
+- I've noticed once that the script wonldn't work if the "Rockstar Games Launcher" window was opened. Try closing it, and everything should work fine.
+- A visual glitch occurs on the Macro Buttons at startup. Moving your cursor over the glitch will fix it temporarily.
 
 # FAQ
 
@@ -17,10 +17,13 @@ GTA Macros for TRYHARD players using AutoHotkey v2.
 
 > Yes, it works with all screen modes, including Full Screen.
 
-### BST is not working
+### Drop BST is not working
 
-> 1. Ensure you are in a CEO Organization.
-> 2. Be aware that there is a known bug that can cause random failures occasionally.
+> Ensure you are in a CEO Organization.
+
+### Macros are not working consistently
+
+> Try selecting a slower "Macro Speed"; your computer's specs might be too low for the default "Normal: 50ms" speed.
 
 # Screenshot
 
