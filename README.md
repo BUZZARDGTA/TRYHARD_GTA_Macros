@@ -25,5 +25,5 @@ GTA Macros for TRYHARD players using AutoHotkey v2.
 # Screenshot
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/5880847b-1071-480c-856f-6f3669c45ead" alt="TRYHARD Macros" style="width: 35%;">
+  <img src="https://github.com/user-attachments/assets/619cb153-4fe2-4537-b586-153b46575a46" alt="TRYHARD Macros" style="width: 35%;">
 </div>
