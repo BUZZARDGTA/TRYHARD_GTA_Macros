@@ -23,7 +23,7 @@ GTA Macros for TRYHARD players using AutoHotkey v2.
 
 ### Macros are not working consistently
 
-> Try selecting a slower "Macro Speed"; your computer's specs might be too low for the default "Normal: 50ms" speed.
+> Try selecting a slower "Macro Speed"; your computer's specs might be too low for the default one.
 
 # Screenshot
 
