@@ -55,8 +55,8 @@ Returns the first PID found, otherwise false.
 */
 GetGTAPid() {
     SetTitleMatchMode(3) ; Exact match mode
-    for HWND in WinGetList("Grand Theft Auto V") {
-        GTAPid := WinGetPID(HWND)
+    for Hwnd in WinGetList("Grand Theft Auto V") {
+        GTAPid := WinGetPID(Hwnd)
         ProcessName := ProcessGetName(GTAPid)
 
         if (ProcessName == "GTA5.exe" && WinExist("ahk_pid " GTAPid)) {
@@ -321,13 +321,6 @@ SpeedDropdown.OnEvent("Change", SetDelay)
 MyGui.AddText("w0 h0", "")
 MyGui.AddText("w244 h1 Border", "")
 MyGui.AddText("w0 h0", "")
-ShowToolTip(*) {
-    ToolTip("*Drop BST: Ensure you are in a CEO Organization.")
-}
-
-HideToolTip(*) {
-    ToolTip()
-}
 
 DropBST_Button := MyGui.AddButton(, "Drop BST*")
 DropBST_Button.OnEvent("Click", DropBST)
