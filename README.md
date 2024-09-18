@@ -1,6 +1,6 @@
 # TRYHARD GTA Macros
 
-GTA Macros using AutoHotkey v2 for TRYHARD people. 
+GTA Macros for TRYHARD players using AutoHotkey v2.
 
 # FAQ
 
