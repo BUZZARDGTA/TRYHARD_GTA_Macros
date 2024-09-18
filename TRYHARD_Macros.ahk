@@ -11,6 +11,26 @@ MyGui.Title := SCRIPT_TITLE
 
 MyGui.Opt("+AlwaysOnTop")  ; +Owner avoids a taskbar button.
 
+On_WM_MOUSEMOVE(wParam, lParam, msg, Hwnd) {
+    static PrevHwnd := 0
+    if (Hwnd != PrevHwnd) {
+        Text := "", ToolTip() ; Turn off any previous tooltip.
+        CurrControl := GuiCtrlFromHwnd(Hwnd)
+        if CurrControl {
+            if !CurrControl.HasProp("ToolTip")
+                return ; No tooltip for this control.
+            Text := CurrControl.ToolTip
+            SetTimer () => ToolTip(Text), -250
+            SetTimer () => ToolTip(), -3000 ; Remove the tooltip.
+        }
+        PrevHwnd := Hwnd
+    }
+}
+
+Link_Click(Ctrl, ID, HREF) {
+    Run(HREF)
+}
+
 CustomOutputDebug(str) {
     if (DebugEnabled) {
         OutputDebug("[TRYHARD_GTA_Macros.ahk]: " str)
@@ -107,8 +127,18 @@ SetDelay(*) {
         case "Normal":
             KeyDelay := 100
         case "Fast":
+            MsgBox(
+                "This method is recommended only for sessions with a limited number of players, as it may not work consistently otherwise.",
+                SCRIPT_TITLE,
+                "OK Iconi 4096"
+            )
             KeyDelay := 50
         case "Very Fast":
+            MsgBox(
+                "This method is recommended only for invite-only sessions with a limited number of players, as it may not work consistently otherwise.",
+                SCRIPT_TITLE,
+                "OK Iconi 4096"
+            )
             KeyDelay := 50
     }
 }
@@ -195,15 +225,46 @@ ReloadAllWeapons(*) {
     Send(",")
 }
 
-ApplyHotkeys(*) {
+ApplyHotkeyBST(*) {
     global HotkeyBST
+
+    try {
+        HotkeyBST := HotkeyBST_Input.Value
+        Hotkey(HotkeyBST, DropBST)
+    } catch error as err {
+        if (err.what == "Hotkey" && err.message == "Invalid key name.") {
+            MsgBox(
+                "Error: Hotkey is an invalid key name.",
+                SCRIPT_TITLE,
+                "OK Icon! 4096"
+            )
+            return false
+        }
+        throw Error(err)
+    }
+
+    return true
+}
+
+ApplyHotkeyReload(*) {
     global HotkeyReload
 
-    HotkeyBST := HotkeyBST_Input.Value
-    Hotkey(HotkeyBST, DropBST)
+    try {
+        HotkeyReload := HotkeyReload_Input.Value
+        Hotkey(HotkeyReload, ReloadAllWeapons)
+    } catch error as err {
+        if (err.what == "Hotkey" && err.message == "Invalid key name.") {
+            MsgBox(
+                "Error: Hotkey is an invalid key name.",
+                SCRIPT_TITLE,
+                "OK Icon! 4096"
+            )
+            return false
+        }
+        throw Error(err)
+    }
 
-    HotkeyReload := HotkeyReload_Input.Value
-    Hotkey(HotkeyReload, ReloadAllWeapons)
+    return true
 }
 
 openRepo(*) {
@@ -221,29 +282,43 @@ SpeedDropdown := MyGui.AddDropDownList(, [
 SpeedDropdown.Choose(3)
 SpeedDropdown.OnEvent("Change", SetDelay)
 
-MyGui.AddText("w0 h1", "")
+MyGui.AddText("w0 h0", "")
 MyGui.AddText("w244 h1 Border", "")
-MyGui.AddText("w0 h1", "")
+MyGui.AddText("w0 h0", "")
+ShowToolTip(*) {
+    ToolTip("*Drop BST: Ensure you are in a CEO Organization.")
+}
 
-DropBST_Button := MyGui.AddButton("Default", "Drop BST")
+HideToolTip(*) {
+    ToolTip()
+}
+
+DropBST_Button := MyGui.AddButton(, "Drop BST*")
 DropBST_Button.OnEvent("Click", DropBST)
-ReloadAllWeapons_Button := MyGui.AddButton("Default x+10", "Reload All Weapons")
+DropBST_Button.ToolTip := "*Drop BST: Ensure you are in a CEO Organization."
+ReloadAllWeapons_Button := MyGui.AddButton("x+10", "Reload All Weapons")
 ReloadAllWeapons_Button.OnEvent("Click", ReloadAllWeapons)
 
-MyGui.AddText("x10 w0 h1", "")
+MyGui.AddText("x10 w0 h0", "")
 MyGui.AddText("w244 h1 Border", "")
-MyGui.AddText("w0 h1", "")
+MyGui.AddText("w0 h0", "")
 
-MyGui.AddText(, "Hotkey for Drop BST:")
+MyGui.AddText(, "Hotkey* for Drop BST:")
 HotkeyBST_Input := MyGui.AddEdit("w100", HotkeyBST)
-MyGui.AddButton("w75 x+10", "Apply")
-MyGui.AddText("x10", "Hotkey for Reload All Weapons:")
+HotkeyBST_Button := MyGui.AddButton("w75 x+10", "Apply")
+HotkeyBST_Button.OnEvent("Click", ApplyHotkeyBST)
+MyGui.AddText("x10", "Hotkey* for Reload All Weapons:")
 HotkeyReload_Input := MyGui.AddEdit("w100", HotkeyReload)
-MyGui.AddButton("w75 x+10", "Apply")
+HotkeyReload_Button := MyGui.AddButton("w75 x+10", "Apply")
+HotkeyReload_Button.OnEvent("Click", ApplyHotkeyReload)
+Link := MyGui.AddLink("x10",
+    'Full list of possible Hotkeys:`n<a id="KeyListHelp" href="https://www.autohotkey.com/docs/v2/KeyList.htm">https://www.autohotkey.com/docs/v2/KeyList.htm</a>.'
+)
+Link.OnEvent("Click", Link_Click)
 
-MyGui.AddText("x10 w0 h1", "")
+MyGui.AddText("w0 h0", "")
 MyGui.AddText("w244 h1 Border", "")
-MyGui.AddText("w0 h1", "")
+MyGui.AddText("w0 h0", "")
 
 Repo_Button := MyGui.AddButton("Default x+100", "Help / Check For Updates")
 Repo_Button.OnEvent("Click", openRepo)
@@ -251,8 +326,10 @@ Repo_Button.OnEvent("Click", openRepo)
 Hotkey(HotkeyBST, DropBST)
 Hotkey(HotkeyReload, ReloadAllWeapons)
 
-MyGui.Show("w264 h310")
+MyGui.Show("w280 h344")
 
-CenterElement(MyGui, SpeedDropdown)
+OnMessage(0x0200, On_WM_MOUSEMOVE)
+
 CenterElement(MyGui, Speed_Text)
+CenterElement(MyGui, SpeedDropdown)
 CenterElements(MyGui, DropBST_Button, ReloadAllWeapons_Button)
