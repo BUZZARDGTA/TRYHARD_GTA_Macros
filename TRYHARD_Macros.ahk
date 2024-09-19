@@ -17,13 +17,13 @@ TOOLTIP_DISPLAY_TIME := 250
 TOOLTIP_HIDE_TIME := 3000
 
 KEY_HOLD_VERY_SLOW := 100
-KEY_HOLD_SLOW := 74
+KEY_HOLD_SLOW := 75
 KEY_HOLD_NORMAL := 50
 KEY_HOLD_FAST := 35
 KEY_HOLD_VERY_FAST := 25
 
 KEY_DELAY_VERY_SLOW := 100
-KEY_DELAY_SLOW := 74
+KEY_DELAY_SLOW := 75
 KEY_DELAY_NORMAL := 50
 KEY_DELAY_FAST := 35
 KEY_DELAY_VERY_FAST := 25
@@ -31,6 +31,8 @@ KEY_DELAY_VERY_FAST := 25
 WAITING_GTA_WINDOW_TIMER := 5
 
 MSGBOX_SYSTEM_MODAL := 4096
+
+CENTER_ADJUSTMENT_PIXELS := 7
 
 
 On_WM_MOUSEMOVE(wParam, lParam, msg, Hwnd) {
@@ -68,6 +70,16 @@ CustomOutputDebug(str) {
     }
 }
 
+AddSeparator(gui, Options := {}) {
+    TextOptions1 := "w0 h0" . (Options.HasOwnProp("text1") ? " " . Options.text1 : "")
+    TextOptions2 := "w244 h1 Border" . (Options.HasOwnProp("text2") ? " " . Options.text2 : "")
+    TextOptions3 := "w0 h0" . (Options.HasOwnProp("text3") ? " " . Options.text3 : "")
+
+    gui.AddText(TextOptions1, "")
+    gui.AddText(TextOptions2, "")
+    gui.AddText(TextOptions3, "")
+}
+
 ; Function to center a GUI element
 CenterElement(gui, element) {
     ; Get the dimensions of the GUI
@@ -77,13 +89,13 @@ CenterElement(gui, element) {
     element.GetPos(&elementX, &elementY, &elementWidth, &elementHeight)
 
     ; Calculate the new X position to center the element horizontally
-    newX := (guiWidth - elementWidth) / 2
+    newX := ((guiWidth - elementWidth) / 2) - CENTER_ADJUSTMENT_PIXELS
 
     ; Move the element to the center horizontally, keeping its original Y position
     element.Move(newX, elementY)
 }
 
-; Function to center multiple GUI elements with spacing
+; Function to center multiple GUI elements with spacing and a left adjustment
 CenterElements(gui, elements*) {
     spacing := 10
 
@@ -100,8 +112,8 @@ CenterElements(gui, elements*) {
     }
     totalWidth += spacing * (elementCount - 1) ; Add spacing between elements
 
-    ; Calculate starting position to center all elements
-    startX := (guiWidth - totalWidth) / 2
+    ; Calculate starting position to center all elements with adjustment
+    startX := ((guiWidth - totalWidth) / 2) - CENTER_ADJUSTMENT_PIXELS
 
     ; Position elements with spacing
     currentX := startX
@@ -117,10 +129,11 @@ CenterElements(gui, elements*) {
     }
 }
 
+
 SetDelay(*) {
     global KeyDelay, KeyHold
 
-    speed := SpeedDropdown.Text
+    speed := Speed_DropdownList.Text
 
     switch speed {
         case "Very Slow: " . KEY_DELAY_VERY_SLOW . "ms":
@@ -129,10 +142,10 @@ SetDelay(*) {
         case "Slow: " . KEY_DELAY_SLOW . "ms":
             KeyDelay := KEY_DELAY_SLOW
             KeyHold := KEY_HOLD_SLOW
-        case "Normal; " . KEY_DELAY_NORMAL . "ms":
+        case "Normal: " . KEY_DELAY_NORMAL . "ms":
             KeyDelay := KEY_DELAY_NORMAL
             KeyHold := KEY_HOLD_NORMAL
-        case "Fast; " . KEY_DELAY_FAST . "ms":
+        case "Fast: " . KEY_DELAY_FAST . "ms":
             KeyDelay := KEY_DELAY_FAST
             KeyHold := KEY_HOLD_FAST
             MsgBox(
@@ -158,7 +171,7 @@ ApplyHotkeyBST(*) {
         ; Remove any previous hotkey assignment
         Hotkey(HotkeyBST, "Off", "Off")
 
-        HotkeyBST := HotkeyBST_Input.Value
+        HotkeyBST := HotkeyBST_Edit.Value
         Hotkey(HotkeyBST, DropBST)
         Hotkey(HotkeyBST, "On", "On")
     } catch error as err {
@@ -183,7 +196,7 @@ ApplyHotkeyReload(*) {
         ; Remove any previous hotkey assignment
         Hotkey(HotkeyReload, "Off", "Off")
 
-        HotkeyReload := HotkeyReload_Input.Value
+        HotkeyReload := HotkeyReload_Edit.Value
         Hotkey(HotkeyReload, ReloadAllWeapons)
         Hotkey(HotkeyReload, "On", "On")
     } catch error as err {
@@ -265,6 +278,7 @@ SendKeyWithDelay(count, key, holdTime, releaseTime) {
         CustomOutputDebug("{" key " down}")
         Send("{" key " down}")
         Sleep(holdTime)
+        CustomOutputDebug("{" key " up}")
         Send("{" key " up}")
         Sleep(releaseTime)
     }
@@ -340,46 +354,38 @@ MyGui.Title := SCRIPT_TITLE
 MyGui.Opt("+AlwaysOnTop")  ; +Owner avoids a taskbar button.
 
 Speed_Text := MyGui.AddText(, "Select Macro Speed:")
-SpeedDropdown := MyGui.AddDropDownList(, [
+Speed_DropdownList := MyGui.AddDropDownList(, [
     "Very Slow: " . KEY_DELAY_VERY_SLOW . "ms",
     "Slow: " . KEY_DELAY_SLOW . "ms",
     "Normal; " . KEY_DELAY_NORMAL . "ms",
     "Fast; " . KEY_DELAY_FAST . "ms",
     "Very Fast: " . KEY_DELAY_VERY_FAST . "ms",
 ])
-SpeedDropdown.Choose(3)
-SpeedDropdown.OnEvent("Change", SetDelay)
+Speed_DropdownList.Choose(3)
+Speed_DropdownList.OnEvent("Change", SetDelay)
 
-MyGui.AddText("w0 h0", "")
-MyGui.AddText("w244 h1 Border", "")
-MyGui.AddText("w0 h0", "")
+AddSeparator(MyGui)
 
-DropBST_Button := MyGui.AddButton(, "Drop BST*")
+DropBST_Button := MyGui.AddButton("Disabled", "Drop BST*")
 DropBST_Button.OnEvent("Click", DropBST)
 DropBST_Button.ToolTip := "*Drop BST: Ensure you are in a CEO Organization."
-ReloadAllWeapons_Button := MyGui.AddButton("x+10", "Reload All Weapons")
+ReloadAllWeapons_Button := MyGui.AddButton("Disabled x+10", "Reload All Weapons")
 ReloadAllWeapons_Button.OnEvent("Click", ReloadAllWeapons)
 
-MyGui.AddText("x10 w0 h0", "")
-MyGui.AddText("w244 h1 Border", "")
-MyGui.AddText("w0 h0", "")
+AddSeparator(MyGui, { text1: "x10" })
 
 MyGui.AddText(, "Hotkey for Drop BST:")
-HotkeyBST_Input := MyGui.AddEdit("w100", HotkeyBST)
+HotkeyBST_Edit := MyGui.AddEdit("w100", HotkeyBST)
 HotkeyBST_Button := MyGui.AddButton("w75 x+10", "Apply")
 HotkeyBST_Button.OnEvent("Click", ApplyHotkeyBST)
 MyGui.AddText("x10", "Hotkey for Reload All Weapons:")
-HotkeyReload_Input := MyGui.AddEdit("w100", HotkeyReload)
+HotkeyReload_Edit := MyGui.AddEdit("w100", HotkeyReload)
 HotkeyReload_Button := MyGui.AddButton("w75 x+10", "Apply")
 HotkeyReload_Button.OnEvent("Click", ApplyHotkeyReload)
-Link := MyGui.AddLink("x10",
-    'Full list of possible Hotkeys:`n<a id="KeyListHelp" href="https://www.autohotkey.com/docs/v2/KeyList.htm">https://www.autohotkey.com/docs/v2/KeyList.htm</a>.'
-)
-Link.OnEvent("Click", Link_Click)
+HotkeysHelp_Link := MyGui.AddLink("x10", 'Full list of possible Hotkeys:`n<a id="KeyListHelp" href="https://www.autohotkey.com/docs/v2/KeyList.htm">https://www.autohotkey.com/docs/v2/KeyList.htm</a>.')
+HotkeysHelp_Link.OnEvent("Click", Link_Click)
 
-MyGui.AddText("w0 h0", "")
-MyGui.AddText("w244 h1 Border", "")
-MyGui.AddText("w0 h0", "")
+AddSeparator(MyGui)
 
 Repo_Button := MyGui.AddButton("Default x+100", "Help / Check For Updates")
 Repo_Button.OnEvent("Click", openRepo)
@@ -387,10 +393,14 @@ Repo_Button.OnEvent("Click", openRepo)
 Hotkey(HotkeyBST, DropBST)
 Hotkey(HotkeyReload, ReloadAllWeapons)
 
-MyGui.Show("w280 h344")
+MyGui.Show("w280 h342")
 
 OnMessage(0x0200, On_WM_MOUSEMOVE)
 
 CenterElement(MyGui, Speed_Text)
-CenterElement(MyGui, SpeedDropdown)
+CenterElement(MyGui, Speed_DropdownList)
 CenterElements(MyGui, DropBST_Button, ReloadAllWeapons_Button)
+
+; Fixes a visual Glitch issue, using `Hidden` and then `.Visible` works too, but this is cleaner imo.
+DropBST_Button.Enabled := true
+ReloadAllWeapons_Button.Enabled := true
