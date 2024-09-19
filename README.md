@@ -5,7 +5,6 @@ GTA Macros for TRYHARD players using AutoHotkey v2.
 # Known Bug
 
 - I've noticed once that the script wonldn't work if the "Rockstar Games Launcher" window was opened. Try closing it, and everything should work fine.
-- A visual glitch occurs on the Macro Buttons at startup. Moving your cursor over the glitch will fix it temporarily.
 
 # FAQ
 
@@ -28,5 +27,5 @@ GTA Macros for TRYHARD players using AutoHotkey v2.
 # Screenshot
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/a6361a65-7ea9-4e22-93d7-105168d77509" alt="TRYHARD Macros" style="width: 35%;">
+  <img src="https://github.com/user-attachments/assets/0697b029-50cb-4b8a-bd07-691aecc8a0c2" alt="TRYHARD Macros" style="width: 35%;">
 </div>
