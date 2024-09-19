@@ -1,4 +1,5 @@
 #Requires AutoHotkey v2.0
+#SingleInstance Force
 
 
 ; Globals
@@ -41,6 +42,8 @@ MSGBOX_SYSTEM_MODAL := 4096
 CENTER_ADJUSTMENT_PIXELS := 7
 
 
+SetTitleMatchMode(3) ; Exact match mode
+
 On_WM_MOUSEMOVE(wParam, lParam, msg, Hwnd) {
     static PrevHwnd := 0
     if (Hwnd != PrevHwnd) {
@@ -72,7 +75,7 @@ Pluralize(count, singular, plural := "") {
 
 CustomOutputDebug(str) {
     if DEBUG_ENABLED {
-        OutputDebug("[" . SCRIPT_NAME . "]: " str)
+        OutputDebug("[" . SCRIPT_NAME . "]: " . str)
     }
 }
 
@@ -225,35 +228,24 @@ openRepo(*) {
 }
 
 /*
-Checks if a window with the title "Grand Theft Auto V" and process name "GTA5.exe" exists.
-Returns the first PID found, otherwise false.
+Checks if a window with the title "Grand Theft Auto V", class "grcWindow", and process name "GTA5.exe" exists.
+Returns the unique ID (HWND) of the first matching window (or 0 if none).
 */
-GetGTAPid() {
-    SetTitleMatchMode(3) ; Exact match mode
-    for Hwnd in WinGetList("Grand Theft Auto V") {
-        GTAPid := WinGetPID(Hwnd)
-        ProcessName := ProcessGetName(GTAPid)
-
-        if (ProcessName == "GTA5.exe" && WinExist("ahk_pid " GTAPid)) {
-            return GTAPid
-        }
-    }
-    return false
+GetExistingGTAWindow() {
+    return WinExist("Grand Theft Auto V ahk_class grcWindow ahk_exe GTA5.exe")
 }
 
 /*
-Validates if the "Grand Theft Auto V" window (with the process "GTA5.exe") is active.
+Validates if the "Grand Theft Auto V" window title (with class "grcWindow" and process "GTA5.exe") is active.
 - If the window or process is not found, an error message is shown and false is returned.
 - If the window is not active, it waits for the window to become active within a given time.
 - If the window doesn't become active within the specified time, an error message is shown.
-- Returns the process ID (PID) of the window if active, or false if not.
+- Returns true, or false
 */
-CheckGTAWindowActive() {
-    GTAPid := GetGTAPid()
-
-    if !GTAPid {
+WaitGTAWindowActive() {
+    if !GetExistingGTAWindow() {
         MsgBox(
-            'ERROR: Unable to find a window titled "Grand Theft Auto V" with process name "GTA5.exe".',
+            'ERROR: Unable to find a window titled "Grand Theft Auto V" using class "grcWindow" and with process name "GTA5.exe".`n`nPlease ensure GTA V is currently running.',
             SCRIPT_TITLE,
             "OK Icon! " . MSGBOX_SYSTEM_MODAL
         )
@@ -262,10 +254,10 @@ CheckGTAWindowActive() {
 
     CustomOutputDebug("Waiting for window activation ...")
 
-    if !WinActive("ahk_pid " GTAPid) {
-        if !WinWaitActive("ahk_pid " GTAPid, , WAITING_GTA_WINDOW_TIMER) {
+    if !WinActive() {
+        if !WinWaitActive(,, WAITING_GTA_WINDOW_TIMER) {
             MsgBox(
-                'ERROR: Window titled "Grand Theft Auto V" with process name "GTA5.exe" did not become active within ' . WAITING_GTA_WINDOW_TIMER . ' ' . Pluralize(WAITING_GTA_WINDOW_TIMER, "second") . '.',
+                "ERROR: You didn't open GTA V window within " . WAITING_GTA_WINDOW_TIMER . ' ' . Pluralize(WAITING_GTA_WINDOW_TIMER, "second") . ".`n`nThe macro has been aborted.",
                 SCRIPT_TITLE,
                 "OK Icon! " . MSGBOX_SYSTEM_MODAL
             )
@@ -275,33 +267,37 @@ CheckGTAWindowActive() {
         Sleep(1000) ; Wait for 1 second after the window becomes active
     }
 
-    return GTAPid
+    return true
 }
 
 ; Define a function to send key press, hold, and release
-SendKeyWithDelay(count, key, holdTime, releaseTime) {
-    loop count {
-        CustomOutputDebug("{" key " down}")
-        Send("{" key " down}")
-        Sleep(holdTime)
-        CustomOutputDebug("{" key " up}")
-        Send("{" key " up}")
-        Sleep(releaseTime)
-    }
+SendKeyWithDelay(key, holdTime, releaseTime) {
+    CustomOutputDebug("{" key " down}")
+    Send("{" key " down}")
+    Sleep(holdTime)
+    CustomOutputDebug("{" key " up}")
+    Send("{" key " up}")
+    Sleep(releaseTime)
 }
 
 /*
-Processes a sequence of keystrokes.
-Accepts a list of key actions with count, key, holdTime, and releaseTime.
+Processes a sequence of keystrokes for the game.
+Takes a list of keystrokes where each keystroke includes:
+- `count`: Number of times the key should be pressed
+- `key`: The key to be pressed
+- `hold`: Duration to hold the key
+- `delay`: Time to wait between key presses
+
+Checks if the GTA V window is active before sending each keystroke.
+Displays an error message and aborts if the GTA V window is no longer running.
 */
-ProcessGTAKeyStrokes(KeyStrokes) {
-    GTAPid := CheckGTAWindowActive()
-    if !GTAPid {
+ProcessGTAKeystrokes(Keystrokes) {
+    if !WaitGTAWindowActive() {
         return false
     }
 
-    for KeyStroke in KeyStrokes {
-        if (!WinExist("ahk_pid " GTAPid) || !WinActive("ahk_pid " GTAPid) || !ProcessGetName(GTAPid) == "GTA5.exe") {
+    for Keystroke in Keystrokes {
+        if (!WinExist() || !WinActive() || !ProcessGetName(WinGetPID()) == "GTA5.exe") {
             MsgBox(
                 'ERROR: "GTA5.exe" is no longer running, aborting process.',
                 SCRIPT_TITLE,
@@ -310,30 +306,32 @@ ProcessGTAKeyStrokes(KeyStrokes) {
             return false
         }
 
-        SendKeyWithDelay(KeyStroke.count, KeyStroke.key, KeyStroke.hold, KeyStroke.delay)
+        loop Keystroke.count {
+            SendKeyWithDelay(Keystroke.key, Keystroke.hold, Keystroke.delay)
+        }
     }
     return true
 }
 
 DropBST(*) {
-    BST_KeyStrokes := [
-        { count: 1, key: ",", hold: KeyHold, delay: KeyDelay * 20 },
+    BST_Keystrokes := [
+        { count: 1, key: ",", hold: KeyHold, delay: KeyDelay * 6 },
         ; in Interaction Menu
-        { count: 1, key: "Enter", hold: KeyHold, delay: KeyDelay * 5 },
+        { count: 1, key: "Enter", hold: KeyHold, delay: KeyDelay * 3 },
         ; in SecuroServ CEO Menu
         { count: 4, key: "Down", hold: KeyHold, delay: KeyDelay },
-        { count: 1, key: "Enter", hold: KeyHold, delay: KeyDelay * 5 },
+        { count: 1, key: "Enter", hold: KeyHold, delay: KeyDelay * 3 },
         ; in CEO Abilities Menu
         { count: 1, key: "Down", hold: KeyHold, delay: KeyDelay },
         { count: 1, key: "Enter", hold: KeyHold, delay: 0 }
         ; select Drop Bull Shark
     ]
 
-    ProcessGTAKeyStrokes(BST_KeyStrokes)
+    ProcessGTAKeystrokes(BST_Keystrokes)
 }
 
 ReloadAllWeapons(*) {
-    Reload_KeyStrokes := [
+    Reload_Keystrokes := [
         { count: 1, key: ",", hold: KeyHold, delay: KeyDelay * 20 },
         ; in Interaction Menu
         { count: 4, key: "Down", hold: KeyHold, delay: KeyDelay },
@@ -350,7 +348,7 @@ ReloadAllWeapons(*) {
         { count: 1, key: ",", hold: KeyHold, delay: 0 }
     ]
 
-    ProcessGTAKeyStrokes(Reload_KeyStrokes)
+    ProcessGTAKeystrokes(Reload_Keystrokes)
 }
 
 
