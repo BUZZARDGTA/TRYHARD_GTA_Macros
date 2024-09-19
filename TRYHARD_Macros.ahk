@@ -28,6 +28,12 @@ KEY_DELAY_NORMAL := 50
 KEY_DELAY_FAST := 35
 KEY_DELAY_VERY_FAST := 25
 
+TEXT_SPEED_VERY_SLOW := "Very Slow: " . KEY_DELAY_VERY_SLOW . "ms"
+TEXT_SPEED_SLOW := "Slow: " . KEY_DELAY_SLOW . "ms"
+TEXT_SPEED_NORMAL := "Normal: " . KEY_DELAY_NORMAL . "ms"
+TEXT_SPEED_FAST := "Fast: " . KEY_DELAY_FAST . "ms"
+TEXT_SPEED_VERY_FAST := "Very Fast: " . KEY_DELAY_VERY_FAST . "ms"
+
 WAITING_GTA_WINDOW_TIMER := 5
 
 MSGBOX_SYSTEM_MODAL := 4096
@@ -136,16 +142,16 @@ SetDelay(*) {
     speed := Speed_DropdownList.Text
 
     switch speed {
-        case "Very Slow: " . KEY_DELAY_VERY_SLOW . "ms":
+        case TEXT_SPEED_VERY_SLOW:
             KeyDelay := KEY_DELAY_VERY_SLOW
             KeyHold := KEY_HOLD_VERY_SLOW
-        case "Slow: " . KEY_DELAY_SLOW . "ms":
+        case TEXT_SPEED_SLOW:
             KeyDelay := KEY_DELAY_SLOW
             KeyHold := KEY_HOLD_SLOW
-        case "Normal: " . KEY_DELAY_NORMAL . "ms":
+        case TEXT_SPEED_NORMAL:
             KeyDelay := KEY_DELAY_NORMAL
             KeyHold := KEY_HOLD_NORMAL
-        case "Fast: " . KEY_DELAY_FAST . "ms":
+        case TEXT_SPEED_FAST:
             KeyDelay := KEY_DELAY_FAST
             KeyHold := KEY_HOLD_FAST
             MsgBox(
@@ -153,7 +159,7 @@ SetDelay(*) {
                 SCRIPT_TITLE,
                 "OK Iconi " . MSGBOX_SYSTEM_MODAL
             )
-        case "Very Fast: " . KEY_DELAY_VERY_FAST . "ms":
+        case TEXT_SPEED_VERY_FAST:
             KeyDelay := KEY_DELAY_VERY_FAST
             KeyHold := KEY_HOLD_VERY_FAST
             MsgBox(
@@ -355,11 +361,11 @@ MyGui.Opt("+AlwaysOnTop")  ; +Owner avoids a taskbar button.
 
 Speed_Text := MyGui.AddText(, "Select Macro Speed:")
 Speed_DropdownList := MyGui.AddDropDownList(, [
-    "Very Slow: " . KEY_DELAY_VERY_SLOW . "ms",
-    "Slow: " . KEY_DELAY_SLOW . "ms",
-    "Normal; " . KEY_DELAY_NORMAL . "ms",
-    "Fast; " . KEY_DELAY_FAST . "ms",
-    "Very Fast: " . KEY_DELAY_VERY_FAST . "ms",
+    TEXT_SPEED_VERY_SLOW,
+    TEXT_SPEED_SLOW,
+    TEXT_SPEED_NORMAL,
+    TEXT_SPEED_FAST,
+    TEXT_SPEED_VERY_FAST,
 ])
 Speed_DropdownList.Choose(3)
 Speed_DropdownList.OnEvent("Change", SetDelay)
