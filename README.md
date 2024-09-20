@@ -8,7 +8,7 @@ GTA Macros for TRYHARD players using AutoHotkey v2.
 
 - Enable the taskbar icon to re-display the GUI when double-clicked and add an "Open" item on it's right clic menu.
 
-- Pressing Enter in edit fields should trigger the corresponding "Apply" button, instead of launching the "Check for Updates" function.
+- Pressing Enter in edit fields should trigger the corresponding "Apply" button, instead of triggering the "Help / Check For Updates" button.
 
 - Pressing F1 and then F2 in quick succession should queue the macros in memory, rather than behaving unpredictably.
 
