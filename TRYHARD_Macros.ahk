@@ -9,7 +9,7 @@ KeyHold := 50
 KeyDelay := 50
 
 ; Constants
-DEBUG_ENABLED := true
+DEBUG_ENABLED := false
 GTA_WINDOW_IDENTIFIER := "Grand Theft Auto V ahk_class grcWindow ahk_exe GTA5.exe"
 MSGBOX_SYSTEM_MODAL := 4096
 CENTER_ADJUSTMENT_PIXELS := 7
@@ -40,7 +40,7 @@ TEXT_SPEED_VERY_FAST := "Very Fast: " . KEY_DELAY_VERY_FAST . "ms"
 
 
 SetTitleMatchMode(3) ; Exact match mode
-HotIfWinActive(GTA_WINDOW_IDENTIFIER)
+HotIfWinActive(GTA_WINDOW_IDENTIFIER) ; Only enable Hotkeys when the GTA_WINDOW_IDENTIFIER conditions are found.
 
 On_WM_MOUSEMOVE(wParam, lParam, msg, Hwnd) {
     static PrevHwnd := 0
@@ -175,24 +175,37 @@ SetDelay(*) {
 ApplyHotkeyBST(*) {
     global HotkeyBST
 
-    try {
-        ; Remove any previous hotkey assignment
-        Hotkey(HotkeyBST, "Off", "Off")
+    if (HotkeyBST_Edit.Value == HotkeyReload) {
+        MsgBox(
+            "Error: You cannot assign a hotkey to more than one macro.",
+            SCRIPT_TITLE,
+            "OK Icon! " . MSGBOX_SYSTEM_MODAL
+        )
+        HotkeyBST_Edit.Value := HotkeyBST
+        return false
+    }
 
-        HotkeyBST := HotkeyBST_Edit.Value
-        Hotkey(HotkeyBST, (*) => DropBST("Hotkey"))
-        Hotkey(HotkeyBST, "On", "On")
+    Hotkey(HotkeyBST, "Off")
+
+    try {
+        Hotkey(HotkeyBST_Edit.Value, (*) => DropBST("Hotkey"))
     } catch error as err {
-        if (err.what == "Hotkey" and err.message == "Invalid key name.") {
+        if (err.what == "Hotkey" and (err.message == "Invalid key name." or err.message == "Invalid hotkey.")) {
             MsgBox(
-                "Error: Hotkey is an invalid key name.",
+                "Error: " . err.message,
                 SCRIPT_TITLE,
                 "OK Icon! " . MSGBOX_SYSTEM_MODAL
             )
+            Hotkey(HotkeyBST, (*) => DropBST("Hotkey"))
+            Hotkey(HotkeyBST, "On")
+            HotkeyBST_Edit.Value := HotkeyBST
             return false
         }
         throw err
     }
+
+    Hotkey(HotkeyBST_Edit.Value, "On")
+    HotkeyBST := HotkeyBST_Edit.Value
 
     return true
 }
@@ -200,24 +213,37 @@ ApplyHotkeyBST(*) {
 ApplyHotkeyReload(*) {
     global HotkeyReload
 
-    try {
-        ; Remove any previous hotkey assignment
-        Hotkey(HotkeyReload, "Off", "Off")
+    if (HotkeyReload_Edit.Value == HotkeyBST) {
+        MsgBox(
+            "Error: You cannot assign a hotkey to more than one macro.",
+            SCRIPT_TITLE,
+            "OK Icon! " . MSGBOX_SYSTEM_MODAL
+        )
+        HotkeyReload_Edit.Value := HotkeyReload
+        return false
+    }
 
-        HotkeyReload := HotkeyReload_Edit.Value
-        Hotkey(HotkeyReload, ReloadAllWeapons)
-        Hotkey(HotkeyReload, "On", "On")
+    Hotkey(HotkeyReload, "Off")
+
+    try {
+        Hotkey(HotkeyReload_Edit.Value, (*) => ReloadAllWeapons("Hotkey"))
     } catch error as err {
-        if (err.what == "Hotkey" and err.message == "Invalid key name.") {
+        if (err.what == "Hotkey" and (err.message == "Invalid key name." or err.message == "Invalid hotkey.")) {
             MsgBox(
-                "Error: Hotkey is an invalid key name.",
+                "Error: " . err.message,
                 SCRIPT_TITLE,
                 "OK Icon! " . MSGBOX_SYSTEM_MODAL
             )
+            Hotkey(HotkeyReload, (*) => ReloadAllWeapons("Hotkey"))
+            Hotkey(HotkeyReload, "On")
+            HotkeyReload_Edit.Value := HotkeyReload
             return false
         }
         throw err
     }
+
+    Hotkey(HotkeyReload_Edit.Value, "On")
+    HotkeyReload := HotkeyReload_Edit.Value
 
     return true
 }
@@ -357,11 +383,11 @@ ReloadAllWeapons_Button.OnEvent("Click", (*) => ReloadAllWeapons("Button"))
 AddSeparator(MyGui, { text1: "x10" })
 
 MyGui.AddText(, "Hotkey for Drop BST:")
-HotkeyBST_Edit := MyGui.AddEdit("w100", HotkeyBST)
+HotkeyBST_Edit := MyGui.AddEdit("w100 Limit17", HotkeyBST)
 HotkeyBST_Button := MyGui.AddButton("w75 x+10", "Apply")
 HotkeyBST_Button.OnEvent("Click", ApplyHotkeyBST)
 MyGui.AddText("x10", "Hotkey for Reload All Weapons:")
-HotkeyReload_Edit := MyGui.AddEdit("w100", HotkeyReload)
+HotkeyReload_Edit := MyGui.AddEdit("w100 Limit17", HotkeyReload)
 HotkeyReload_Button := MyGui.AddButton("w75 x+10", "Apply")
 HotkeyReload_Button.OnEvent("Click", ApplyHotkeyReload)
 HotkeysHelp_Link := MyGui.AddLink("x10", 'Full list of possible Hotkeys:`n<a id="KeyListHelp" href="https://www.autohotkey.com/docs/v2/KeyList.htm">https://www.autohotkey.com/docs/v2/KeyList.htm</a>.')

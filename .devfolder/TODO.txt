@@ -1,0 +1,24 @@
+make taskbar icon possible to render gui again on double Click
+
+The built-in variable A_ScriptHwnd contains the unique ID (HWND) of the script's main window.
+
+if A_IsCompiled
+    A_AllowMainWindow := true
+
+
+add all custom settings
+
+pressing F1 annd then F2 in a very small time should stack them in memory instead of doing the weird thing it does
+
+Error: Nonexistent hotkey.
+
+fix that you cannot have 1 hotkey for different MACROS
+
+add a macro anti kick
+
+make the reload code 100% works using dpad up and dpad down only
+
+add different methods for reload all weapons or change the current one or tooltip help for it
+
+
+pressing enter in edit fields should instead of launching check for udates press apply button corresponding.
