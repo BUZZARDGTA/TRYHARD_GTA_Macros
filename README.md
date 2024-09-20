@@ -6,7 +6,7 @@ GTA Macros for TRYHARD players using AutoHotkey v2.
 
 - After restarting the game, the script ain't working anymore.
 
-- Enable the taskbar icon to re-display the GUI when double-clicked / add an "Open" item on it's right clic menu.
+- Enable the taskbar icon to re-display the GUI when double-clicked and add an "Open" item on it's right clic menu.
 
 - Pressing Enter in edit fields should trigger the corresponding "Apply" button, instead of launching the "Check for Updates" function.
 
