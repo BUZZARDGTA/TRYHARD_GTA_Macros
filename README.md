@@ -2,18 +2,6 @@
 
 GTA Macros for TRYHARD players using AutoHotkey v2.
 
-# Known Bugs (sorted by likelihood of fixing)
-
-- After restarting the game, the script ain't working anymore.
-
-- Enable the taskbar icon to re-display the GUI when double-clicked and add an "Open" item on it's right clic menu.
-
-- Pressing Enter in edit fields should trigger the corresponding "Apply" button, instead of triggering the "Help / Check For Updates" button.
-
-- Spamming macros (or triggering them too quickly) should queue unfinished ones, ensuring each macro is only added once to memory.
-
-- I've noticed once that the script wonldn't work if the "Rockstar Games Launcher" window was opened. Try closing it, and everything should work fine.
-
 # FAQ
 
 ### Is it detected?
@@ -37,6 +25,18 @@ GTA Macros for TRYHARD players using AutoHotkey v2.
 <div align="center">
   <img src="https://github.com/user-attachments/assets/0697b029-50cb-4b8a-bd07-691aecc8a0c2" alt="TRYHARD Macros" style="width: 35%;">
 </div>
+
+# Known Bugs (sorted by likelihood of fixing)
+
+- After restarting the game, the script ain't working anymore.
+
+- Enable the taskbar icon to re-display the GUI when double-clicked and add an "Open" item on it's right clic menu.
+
+- Pressing Enter in edit fields should trigger the corresponding "Apply" button, instead of triggering the "Help / Check For Updates" button.
+
+- Spamming macros (or triggering them too quickly) should queue unfinished ones, ensuring each macro is only added once to memory.
+
+- I've noticed once that the script wonldn't work if the "Rockstar Games Launcher" window was opened. Try closing it, and everything should work fine.
 
 # TODO (sorted by likelihood of completion)
 
