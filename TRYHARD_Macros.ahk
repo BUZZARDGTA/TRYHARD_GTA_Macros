@@ -18,7 +18,7 @@ SCRIPT_NAME := "TRYHARD_Macros.ahk"
 SCRIPT_TITLE := "TRYHARD Macros"
 
 TOOLTIP_DISPLAY_TIME := 250
-TOOLTIP_HIDE_TIME := 3000
+TOOLTIP_HIDE_TIME := 5000
 
 KEY_HOLD_VERY_SLOW := 100
 KEY_HOLD_SLOW := 75
@@ -44,7 +44,7 @@ HotIfWinActive(GTA_WINDOW_IDENTIFIER) ; Only enable Hotkeys when the GTA_WINDOW_
 
 On_WM_MOUSEMOVE(wParam, lParam, msg, Hwnd) {
     static PrevHwnd := 0
-    if (Hwnd != PrevHwnd) {
+    if not (Hwnd == PrevHwnd) {
         Text := "", ToolTip() ; Turn off any previous tooltip.
         CurrControl := GuiCtrlFromHwnd(Hwnd)
         if CurrControl {
@@ -267,14 +267,25 @@ ReloadAllWeapons(triggerSource) {
         ; in Health and Ammo Menu
         { count: 1, key: "Enter", hold: KeyHold, delay: KeyDelay * 5 },
         ; in Ammo Menu
-        { count: 1, key: "Left", hold: KeyHold, delay: KeyDelay },
-        ; selected Ammo Type < All >
-        { count: 1, key: "Down", hold: KeyHold, delay: KeyDelay },
-        ; hover Full Ammo $~
-        { count: 1, key: "Enter", hold: KeyHold, delay: KeyDelay * 5 },
-        ; exit Interaction Menu
-        { count: 1, key: ",", hold: KeyHold, delay: 0 }
     ]
+
+    if (ReloadAllWeapons_CheckBox.Value == 1) {
+        Loop 8 {
+            Reload_Keystrokes.Push({ count: 1, key: "Up", hold: KeyHold, delay: KeyDelay })
+            Reload_Keystrokes.Push({ count: 1, key: "Enter", hold: KeyHold, delay: KeyDelay })
+            Reload_Keystrokes.Push({ count: 1, key: "Down", hold: KeyHold, delay: KeyDelay })
+            Reload_Keystrokes.Push({ count: 1, key: "Left", hold: KeyHold, delay: KeyDelay })
+        }
+    } else {
+        Reload_Keystrokes.Push({ count: 1, key: "Left", hold: KeyHold, delay: KeyDelay })
+        ; selected Ammo Type < All >
+        Reload_Keystrokes.Push({ count: 1, key: "Down", hold: KeyHold, delay: KeyDelay })
+        ; hover Full Ammo $~
+        Reload_Keystrokes.Push({ count: 1, key: "Enter", hold: KeyHold, delay: KeyDelay * 5 })
+    }
+
+    ; exit Interaction Menu
+    Reload_Keystrokes.Push({ count: 1, key: ",", hold: KeyHold, delay: 0 })
 
     ProcessGTAKeystrokes(triggerSource, Reload_Keystrokes)
 }
@@ -375,11 +386,15 @@ AddSeparator(MyGui)
 
 DropBST_Button := MyGui.AddButton("Disabled", "Drop BST*")
 DropBST_Button.OnEvent("Click", (*) => DropBST("Button"))
-DropBST_Button.ToolTip := "*Drop BST: Ensure you are in a CEO Organization."
-ReloadAllWeapons_Button := MyGui.AddButton("Disabled x+10", "Reload All Weapons")
+DropBST_Button.ToolTip := "*Ensure you are in a CEO Organization."
+ReloadAllWeapons_Button := MyGui.AddButton("Disabled x+10", "Reload All Weapons*")
 ReloadAllWeapons_Button.OnEvent("Click", (*) => ReloadAllWeapons("Button"))
+ReloadAllWeapons_Button.ToolTip := '*If you are NOT using "FIX (slower)", before reloading, fire a single pistol round.'
 
-AddSeparator(MyGui, { text1: "x10" })
+ReloadAllWeapons_CheckBox := MyGui.AddCheckBox("x10", "Reload All Weapons: FIX (slower)")
+ReloadAllWeapons_CheckBox.Value := 1
+
+AddSeparator(MyGui)
 
 MyGui.AddText(, "Hotkey for Drop BST:")
 HotkeyBST_Edit := MyGui.AddEdit("w100 Limit17", HotkeyBST)
@@ -401,13 +416,14 @@ Repo_Button.OnEvent("Click", openRepo)
 Hotkey(HotkeyBST, (*) => DropBST("Hotkey"))
 Hotkey(HotkeyReload, (*) => ReloadAllWeapons("Hotkey"))
 
-MyGui.Show("w280 h342")
+MyGui.Show("w280 h360")
 
 OnMessage(0x0200, On_WM_MOUSEMOVE)
 
 CenterElement(MyGui, Speed_Text)
 CenterElement(MyGui, Speed_DropdownList)
 CenterElements(MyGui, DropBST_Button, ReloadAllWeapons_Button)
+CenterElement(MyGui, ReloadAllWeapons_CheckBox)
 
 ; Fixes a visual Glitch issue, using `Hidden` and then `.Visible` works too, but this is cleaner imo.
 DropBST_Button.Enabled := true
