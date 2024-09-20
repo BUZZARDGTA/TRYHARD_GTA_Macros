@@ -244,47 +244,54 @@ ProcessGTAKeystrokes(triggerSource, Keystrokes) {
 DropBST(triggerSource) {
     BST_Keystrokes := [
         { count: 1, key: ",", hold: KeyHold, delay: KeyDelay * 6 },
-        ; in Interaction Menu
+        ; in [Interaction Menu]
         { count: 1, key: "Enter", hold: KeyHold, delay: KeyDelay * 3 },
-        ; in SecuroServ CEO Menu
+        ; in [SecuroServ CEO]
         { count: 4, key: "Down", hold: KeyHold, delay: KeyDelay },
         { count: 1, key: "Enter", hold: KeyHold, delay: KeyDelay * 3 },
-        ; in CEO Abilities Menu
+        ; in [CEO Abilities]
         { count: 1, key: "Down", hold: KeyHold, delay: KeyDelay },
         { count: 1, key: "Enter", hold: KeyHold, delay: 0 }
-        ; select Drop Bull Shark
+        ; select [Drop Bull Shark]
     ]
 
     ProcessGTAKeystrokes(triggerSource, BST_Keystrokes)
 }
 
 ReloadAllWeapons(triggerSource) {
-    Reload_Keystrokes := [
-        { count: 1, key: ",", hold: KeyHold, delay: KeyDelay * 20 },
-        ; in Interaction Menu
+    Reload_Keystrokes := []
+
+    Reload_Keystrokes.Push(
+        { count: 1, key: ",", hold: KeyHold, delay: KeyDelay * 6 },
+        ; in [Interaction Menu]
         { count: 4, key: "Down", hold: KeyHold, delay: KeyDelay },
-        { count: 1, key: "Enter", hold: KeyHold, delay: KeyDelay * 5 },
-        ; in Health and Ammo Menu
-        { count: 1, key: "Enter", hold: KeyHold, delay: KeyDelay * 5 },
-        ; in Ammo Menu
-    ]
+        { count: 1, key: "Enter", hold: KeyHold, delay: KeyDelay * 3 },
+        ; in [Health and Ammo]
+        { count: 1, key: "Enter", hold: KeyHold, delay: KeyDelay * 3 }
+        ; in [Ammo]
+    )
 
     if (ReloadAllWeapons_CheckBox.Value == 1) {
+        ; Iterate through each [Ammo Type] and select the [Full Ammo $x] option for each
         Loop 8 {
-            Reload_Keystrokes.Push({ count: 1, key: "Up", hold: KeyHold, delay: KeyDelay })
-            Reload_Keystrokes.Push({ count: 1, key: "Enter", hold: KeyHold, delay: KeyDelay })
-            Reload_Keystrokes.Push({ count: 1, key: "Down", hold: KeyHold, delay: KeyDelay })
-            Reload_Keystrokes.Push({ count: 1, key: "Left", hold: KeyHold, delay: KeyDelay })
+            Reload_Keystrokes.Push(
+                { count: 1, key: "Up", hold: KeyHold, delay: KeyDelay },
+                { count: 1, key: "Enter", hold: KeyHold, delay: KeyDelay },
+                { count: 1, key: "Down", hold: KeyHold, delay: KeyDelay },
+                { count: 1, key: "Left", hold: KeyHold, delay: KeyDelay }
+            )
         }
     } else {
-        Reload_Keystrokes.Push({ count: 1, key: "Left", hold: KeyHold, delay: KeyDelay })
-        ; selected Ammo Type < All >
-        Reload_Keystrokes.Push({ count: 1, key: "Down", hold: KeyHold, delay: KeyDelay })
-        ; hover Full Ammo $~
-        Reload_Keystrokes.Push({ count: 1, key: "Enter", hold: KeyHold, delay: KeyDelay * 5 })
+        Reload_Keystrokes.Push(
+            { count: 1, key: "Left", hold: KeyHold, delay: KeyDelay },
+            ; hover [Ammo Type < All >]
+            { count: 1, key: "Down", hold: KeyHold, delay: KeyDelay },
+            ; hover [Full Ammo $x]
+            { count: 1, key: "Enter", hold: KeyHold, delay: KeyDelay * 3 }
+        )
     }
 
-    ; exit Interaction Menu
+    ; exit [Interaction Menu]
     Reload_Keystrokes.Push({ count: 1, key: ",", hold: KeyHold, delay: 0 })
 
     ProcessGTAKeystrokes(triggerSource, Reload_Keystrokes)
@@ -365,6 +372,7 @@ ApplyHotkeyReload(*) {
 
     return true
 }
+
 
 MyGui := Gui()
 MyGui.Title := SCRIPT_TITLE
