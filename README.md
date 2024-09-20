@@ -26,6 +26,10 @@ GTA Macros for TRYHARD players using AutoHotkey v2.
   <img src="https://github.com/user-attachments/assets/0697b029-50cb-4b8a-bd07-691aecc8a0c2" alt="TRYHARD Macros" style="width: 35%;">
 </div>
 
+# Known Bug
+
+- I've noticed once that the script wonldn't work if the "Rockstar Games Launcher" window was opened. Try closing it, and everything should work fine.
+
 # Known Bugs (sorted by likelihood of fixing)
 
 - After restarting the game, the script ain't working anymore.
@@ -36,7 +40,6 @@ GTA Macros for TRYHARD players using AutoHotkey v2.
 
 - Spamming macros (or triggering them too quickly) should queue unfinished ones, ensuring each macro is only added once to memory.
 
-- I've noticed once that the script wonldn't work if the "Rockstar Games Launcher" window was opened. Try closing it, and everything should work fine.
 
 # TODO (sorted by likelihood of completion)
 
