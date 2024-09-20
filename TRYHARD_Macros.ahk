@@ -172,82 +172,6 @@ SetDelay(*) {
     }
 }
 
-ApplyHotkeyBST(*) {
-    global HotkeyBST
-
-    if (HotkeyBST_Edit.Value == HotkeyReload) {
-        MsgBox(
-            "Error: You cannot assign a hotkey to more than one macro.",
-            SCRIPT_TITLE,
-            "OK Icon! " . MSGBOX_SYSTEM_MODAL
-        )
-        HotkeyBST_Edit.Value := HotkeyBST
-        return false
-    }
-
-    Hotkey(HotkeyBST, "Off")
-
-    try {
-        Hotkey(HotkeyBST_Edit.Value, (*) => DropBST("Hotkey"))
-    } catch error as err {
-        if (err.what == "Hotkey" and (err.message == "Invalid key name." or err.message == "Invalid hotkey.")) {
-            MsgBox(
-                "Error: " . err.message,
-                SCRIPT_TITLE,
-                "OK Icon! " . MSGBOX_SYSTEM_MODAL
-            )
-            Hotkey(HotkeyBST, (*) => DropBST("Hotkey"))
-            Hotkey(HotkeyBST, "On")
-            HotkeyBST_Edit.Value := HotkeyBST
-            return false
-        }
-        throw err
-    }
-
-    Hotkey(HotkeyBST_Edit.Value, "On")
-    HotkeyBST := HotkeyBST_Edit.Value
-
-    return true
-}
-
-ApplyHotkeyReload(*) {
-    global HotkeyReload
-
-    if (HotkeyReload_Edit.Value == HotkeyBST) {
-        MsgBox(
-            "Error: You cannot assign a hotkey to more than one macro.",
-            SCRIPT_TITLE,
-            "OK Icon! " . MSGBOX_SYSTEM_MODAL
-        )
-        HotkeyReload_Edit.Value := HotkeyReload
-        return false
-    }
-
-    Hotkey(HotkeyReload, "Off")
-
-    try {
-        Hotkey(HotkeyReload_Edit.Value, (*) => ReloadAllWeapons("Hotkey"))
-    } catch error as err {
-        if (err.what == "Hotkey" and (err.message == "Invalid key name." or err.message == "Invalid hotkey.")) {
-            MsgBox(
-                "Error: " . err.message,
-                SCRIPT_TITLE,
-                "OK Icon! " . MSGBOX_SYSTEM_MODAL
-            )
-            Hotkey(HotkeyReload, (*) => ReloadAllWeapons("Hotkey"))
-            Hotkey(HotkeyReload, "On")
-            HotkeyReload_Edit.Value := HotkeyReload
-            return false
-        }
-        throw err
-    }
-
-    Hotkey(HotkeyReload_Edit.Value, "On")
-    HotkeyReload := HotkeyReload_Edit.Value
-
-    return true
-}
-
 openRepo(*) {
     Run("https://github.com/Illegal-Services/TRYHARD_GTA_Macros")
 }
@@ -355,11 +279,86 @@ ReloadAllWeapons(triggerSource) {
     ProcessGTAKeystrokes(triggerSource, Reload_Keystrokes)
 }
 
+ApplyHotkeyBST(*) {
+    global HotkeyBST
+
+    if (HotkeyBST_Edit.Value == HotkeyReload) {
+        MsgBox(
+            "Error: You cannot assign a hotkey to more than one macro.",
+            SCRIPT_TITLE,
+            "OK Icon! " . MSGBOX_SYSTEM_MODAL
+        )
+        HotkeyBST_Edit.Value := HotkeyBST
+        return false
+    }
+
+    Hotkey(HotkeyBST, "Off")
+
+    try {
+        Hotkey(HotkeyBST_Edit.Value, (*) => DropBST("Hotkey"))
+    } catch error as err {
+        if (err.what == "Hotkey" and (err.message == "Invalid key name." or err.message == "Invalid hotkey.")) {
+            MsgBox(
+                "Error: " . err.message,
+                SCRIPT_TITLE,
+                "OK Icon! " . MSGBOX_SYSTEM_MODAL
+            )
+            Hotkey(HotkeyBST, (*) => DropBST("Hotkey"))
+            Hotkey(HotkeyBST, "On")
+            HotkeyBST_Edit.Value := HotkeyBST
+            return false
+        }
+        throw err
+    }
+
+    Hotkey(HotkeyBST_Edit.Value, "On")
+    HotkeyBST := HotkeyBST_Edit.Value
+
+    return true
+}
+
+ApplyHotkeyReload(*) {
+    global HotkeyReload
+
+    if (HotkeyReload_Edit.Value == HotkeyBST) {
+        MsgBox(
+            "Error: You cannot assign a hotkey to more than one macro.",
+            SCRIPT_TITLE,
+            "OK Icon! " . MSGBOX_SYSTEM_MODAL
+        )
+        HotkeyReload_Edit.Value := HotkeyReload
+        return false
+    }
+
+    Hotkey(HotkeyReload, "Off")
+
+    try {
+        Hotkey(HotkeyReload_Edit.Value, (*) => ReloadAllWeapons("Hotkey"))
+    } catch error as err {
+        if (err.what == "Hotkey" and (err.message == "Invalid key name." or err.message == "Invalid hotkey.")) {
+            MsgBox(
+                "Error: " . err.message,
+                SCRIPT_TITLE,
+                "OK Icon! " . MSGBOX_SYSTEM_MODAL
+            )
+            Hotkey(HotkeyReload, (*) => ReloadAllWeapons("Hotkey"))
+            Hotkey(HotkeyReload, "On")
+            HotkeyReload_Edit.Value := HotkeyReload
+            return false
+        }
+        throw err
+    }
+
+    Hotkey(HotkeyReload_Edit.Value, "On")
+    HotkeyReload := HotkeyReload_Edit.Value
+
+    return true
+}
 
 MyGui := Gui()
 MyGui.Title := SCRIPT_TITLE
 
-MyGui.Opt("+AlwaysOnTop")  ; +Owner avoids a taskbar button.
+MyGui.Opt("+AlwaysOnTop")
 
 Speed_Text := MyGui.AddText(, "Select Macro Speed:")
 Speed_DropdownList := MyGui.AddDropDownList(, [
