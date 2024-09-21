@@ -11,7 +11,7 @@ KeyDelay := 50
 ; Constants
 DEBUG_ENABLED := false
 SCRIPT_TITLE := "TRYHARD Macros"
-SCRIPT_WINDOW_IDENTIFIER := SCRIPT_TITLE . " ahk_class " . "AutoHotkeyGUI" . " ahk_pid " . WinGetPID(A_ScriptHwnd) . " ahk_exe " . A_ScriptName
+SCRIPT_WINDOW_IDENTIFIER := SCRIPT_TITLE . " ahk_class " . "AutoHotkeyGUI" . " ahk_pid " . WinGetPID(A_ScriptHwnd)
 GTA_WINDOW_IDENTIFIER := "Grand Theft Auto V ahk_class grcWindow ahk_exe GTA5.exe"
 MSGBOX_SYSTEM_MODAL := 4096
 CENTER_ADJUSTMENT_PIXELS := 7
@@ -77,16 +77,37 @@ Print(str) {
     }
 }
 
-OpenGui(gui) {
+ShowGui(gui) {
     gui.Show()
 }
 
-UpdateTrayMenuRestoreOptionState() {
+HideGui(gui) {
+    gui.Hide()
+}
+
+UpdateTrayMenuShowHideOptionState(MyGui) {
     if WinExist(SCRIPT_WINDOW_IDENTIFIER) {
-        A_TrayMenu.Default := ""
+        ItemName := "Hide"
+        ActionFunc := (*) => HideGui(MyGui)
+        RenameFrom := "Show"
     } else {
-        A_TrayMenu.Default := "Restore"
+        ItemName := "Show"
+        ActionFunc := (*) => ShowGui(MyGui)
+        RenameFrom := "Hide"
     }
+
+    try {
+        A_TrayMenu.Rename(RenameFrom, ItemName)
+    } catch error as err {
+        if not ((err.what == "Menu.Prototype.Rename") and (err.Message == "Nonexistent menu item.")) {
+            throw err
+        }
+    } else {
+        A_TrayMenu.Add(ItemName, ActionFunc)
+    } finally {
+        A_TrayMenu.Default := ItemName
+    }
+
 }
 
 AddSeparator(gui, Options := {}) {
@@ -449,23 +470,22 @@ AddSeparator(MyGui)
 Repo_Button := MyGui.AddButton("Default x+100", "Help / Check For Updates")
 Repo_Button.OnEvent("Click", openRepo)
 
-
 Hotkey(HotkeyBST, (*) => DropBST("Hotkey"))
 Hotkey(HotkeyReload, (*) => ReloadAllWeapons("Hotkey"))
 
 MyGui.Show("w280 h360")
-
-OnMessage(0x0200, On_WM_MOUSEMOVE)
 
 CenterElement(MyGui, Speed_Text)
 CenterElement(MyGui, Speed_DropdownList)
 CenterElements(MyGui, DropBST_Button, ReloadAllWeapons_Button)
 CenterElement(MyGui, ReloadAllWeapons_CheckBox)
 
+OnMessage(0x0200, On_WM_MOUSEMOVE)
+
 ; Fixes a visual Glitch issue, using `Hidden` and then `.Visible` works too, but this is cleaner imo.
 DropBST_Button.Enabled := true
 ReloadAllWeapons_Button.Enabled := true
 
-A_TrayMenu.Insert("1&", "Restore", (*) => OpenGui(MyGui))
+A_TrayMenu.Insert("1&", "Hide", (*) => HideGui(MyGui))
 A_TrayMenu.Insert("2&")
-SetTimer(UpdateTrayMenuRestoreOptionState, 100)
+SetTimer(() => UpdateTrayMenuShowHideOptionState(MyGui), 100)
