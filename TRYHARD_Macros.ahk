@@ -385,12 +385,6 @@ ApplyHotkeyReload(*) {
 }
 
 
-if A_IsCompiled {
-    A_TrayMenu.Insert("1&", "Restore", (*) => OpenGui(MyGui))
-    A_TrayMenu.Insert("2&")
-    SetTimer(UpdateTrayMenuRestoreOptionState, 100)
-}
-
 MyGui := Gui()
 MyGui.Title := SCRIPT_TITLE
 MyGui.Opt("+AlwaysOnTop")
@@ -452,3 +446,7 @@ CenterElement(MyGui, ReloadAllWeapons_CheckBox)
 ; Fixes a visual Glitch issue, using `Hidden` and then `.Visible` works too, but this is cleaner imo.
 DropBST_Button.Enabled := true
 ReloadAllWeapons_Button.Enabled := true
+
+A_TrayMenu.Insert("1&", "Restore", (*) => OpenGui(MyGui))
+A_TrayMenu.Insert("2&")
+SetTimer(UpdateTrayMenuRestoreOptionState, 100)
