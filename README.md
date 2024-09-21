@@ -34,8 +34,6 @@ GTA Macros for TRYHARD players using AutoHotkey v2.
 
 - After restarting the game, the script ain't working anymore.
 
-- Enable the taskbar icon to re-display the GUI when double-clicked and add an "Open" item on it's right clic menu.
-
 - Pressing Enter in edit fields should trigger the corresponding "Apply" button, instead of triggering the "Help / Check For Updates" button.
 
 - Spamming macros (or triggering them too quickly) should queue unfinished ones, ensuring each macro is only added once to memory.
@@ -44,6 +42,8 @@ GTA Macros for TRYHARD players using AutoHotkey v2.
 # TODO (sorted by likelihood of completion)
 
 - Ensure the macro stops on any mouse click, or when the Escape or Windows key is pressed.
+
+- Enable the taskbar icon to re-display the GUI when double-clicked and add an "Open" item on it's right clic menu.
 
 - Add an anti-kick macro.
 
