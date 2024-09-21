@@ -30,7 +30,7 @@ GTA Macros for TRYHARD players using AutoHotkey v2.
 
 - I've noticed once that the script wonldn't work if the "Rockstar Games Launcher" window was opened. Try closing it, and everything should work fine.
 
-- The macro does not consistently stop when the following keys are __quickly__ pressed: \["LButton", "RButton", "Enter", "Escape", "Backspace"\]. While this currently randomely works, the implementation is not optimized. I recommend holding any of these keys down for a full second for it to works every time.
+- The macro does not consistently stop when the following keys are <ins>**quickly**</ins> pressed: \["LButton", "RButton", "Enter", "Escape", "Backspace"\]. While this currently randomely works, the implementation is not optimized. I recommend holding any of these keys down for a full second for it to works every time.
 
 # Known Bugs (sorted by likelihood of fixing)
 
