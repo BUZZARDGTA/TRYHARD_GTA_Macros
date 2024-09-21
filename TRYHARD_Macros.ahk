@@ -10,12 +10,11 @@ KeyDelay := 50
 
 ; Constants
 DEBUG_ENABLED := false
+SCRIPT_TITLE := "TRYHARD Macros"
+SCRIPT_WINDOW_IDENTIFIER := SCRIPT_TITLE . " ahk_class " . "AutoHotkeyGUI" . " ahk_pid " . WinGetPID(A_ScriptHwnd) . " ahk_exe " . A_ScriptName
 GTA_WINDOW_IDENTIFIER := "Grand Theft Auto V ahk_class grcWindow ahk_exe GTA5.exe"
 MSGBOX_SYSTEM_MODAL := 4096
 CENTER_ADJUSTMENT_PIXELS := 7
-
-SCRIPT_NAME := "TRYHARD_Macros.ahk"
-SCRIPT_TITLE := "TRYHARD Macros"
 
 TOOLTIP_DISPLAY_TIME := 250
 TOOLTIP_HIDE_TIME := 5000
@@ -73,7 +72,19 @@ Pluralize(count, singular, plural := "") {
 
 Print(str) {
     if DEBUG_ENABLED {
-        OutputDebug("[" . SCRIPT_NAME . "]: " . str)
+        OutputDebug("[" . A_ScriptName . "]: " . str)
+    }
+}
+
+OpenGui(gui) {
+    gui.Show()
+}
+
+UpdateTrayMenuRestoreOptionState() {
+    if WinExist(SCRIPT_WINDOW_IDENTIFIER) {
+        A_TrayMenu.Default := ""
+    } else {
+        A_TrayMenu.Default := "Restore"
     }
 }
 
@@ -374,9 +385,14 @@ ApplyHotkeyReload(*) {
 }
 
 
+if A_IsCompiled {
+    A_TrayMenu.Insert("1&", "Restore", (*) => OpenGui(MyGui))
+    A_TrayMenu.Insert("2&")
+    SetTimer(UpdateTrayMenuRestoreOptionState, 100)
+}
+
 MyGui := Gui()
 MyGui.Title := SCRIPT_TITLE
-
 MyGui.Opt("+AlwaysOnTop")
 
 Speed_Text := MyGui.AddText(, "Select Macro Speed:")

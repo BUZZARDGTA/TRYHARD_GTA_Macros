@@ -43,8 +43,6 @@ GTA Macros for TRYHARD players using AutoHotkey v2.
 
 - Ensure the macro stops on any mouse click, or when the Escape or Windows key is pressed.
 
-- Enable the taskbar icon to re-display the GUI when double-clicked and add an "Open" item on it's right clic menu.
-
 - Add an anti-kick macro.
 
 - Add an ultimate "All Settings" advanced config menu.
