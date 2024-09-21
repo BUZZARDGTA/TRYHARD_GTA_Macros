@@ -30,6 +30,8 @@ GTA Macros for TRYHARD players using AutoHotkey v2.
 
 - I've noticed once that the script wonldn't work if the "Rockstar Games Launcher" window was opened. Try closing it, and everything should work fine.
 
+- Ensure that the macro stops on the following keys pressed down: \["LButton", "RButton", "Enter", "Escape", "Backspace"\]. While this currently works, the implementation is not optimized. I recommend holding any of these keys down for a full second for it to works every time.
+
 # Known Bugs (sorted by likelihood of fixing)
 
 - After restarting the game, the script ain't working anymore.
@@ -40,8 +42,6 @@ GTA Macros for TRYHARD players using AutoHotkey v2.
 
 
 # TODO (sorted by likelihood of completion)
-
-- Ensure the macro stops on any mouse click, or when the Escape or Windows key is pressed.
 
 - Add an anti-kick macro.
 

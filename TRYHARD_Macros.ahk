@@ -15,6 +15,7 @@ SCRIPT_WINDOW_IDENTIFIER := SCRIPT_TITLE . " ahk_class " . "AutoHotkeyGUI" . " a
 GTA_WINDOW_IDENTIFIER := "Grand Theft Auto V ahk_class grcWindow ahk_exe GTA5.exe"
 MSGBOX_SYSTEM_MODAL := 4096
 CENTER_ADJUSTMENT_PIXELS := 7
+USER_INPUT__CURRENTLY_PLAYING_MACRO__STOPPING_KEYS := ["LButton", "RButton", "Enter", "Escape", "Backspace"]
 
 TOOLTIP_DISPLAY_TIME := 250
 TOOLTIP_HIDE_TIME := 5000
@@ -22,14 +23,14 @@ TOOLTIP_HIDE_TIME := 5000
 KEY_HOLD_VERY_SLOW := 100
 KEY_HOLD_SLOW := 75
 KEY_HOLD_NORMAL := 50
-KEY_HOLD_FAST := 35
-KEY_HOLD_VERY_FAST := 25
+KEY_HOLD_FAST := 40
+KEY_HOLD_VERY_FAST := 30
 
 KEY_DELAY_VERY_SLOW := 100
 KEY_DELAY_SLOW := 75
 KEY_DELAY_NORMAL := 50
-KEY_DELAY_FAST := 35
-KEY_DELAY_VERY_FAST := 25
+KEY_DELAY_FAST := 40
+KEY_DELAY_VERY_FAST := 30
 
 TEXT_SPEED_VERY_SLOW := "Very Slow: " . KEY_DELAY_VERY_SLOW . "ms"
 TEXT_SPEED_SLOW := "Slow: " . KEY_DELAY_SLOW . "ms"
@@ -51,8 +52,8 @@ On_WM_MOUSEMOVE(wParam, lParam, msg, Hwnd) {
                 return
             }
             Text := CurrControl.ToolTip
-            SetTimer () => ToolTip(Text), -TOOLTIP_DISPLAY_TIME
-            SetTimer () => ToolTip(), -TOOLTIP_HIDE_TIME
+            SetTimer(() => ToolTip(Text), -TOOLTIP_DISPLAY_TIME)
+            SetTimer(() => ToolTip(), -TOOLTIP_HIDE_TIME)
         }
 
         PrevHwnd := Hwnd
@@ -189,10 +190,8 @@ openRepo(*) {
 
 ; Define a function to send key press, hold, and release
 SendKeyWithDelay(key, holdTime, releaseTime) {
-    Print("{" key " down}")
     Send("{" key " down}")
     Sleep(holdTime)
-    Print("{" key " up}")
     Send("{" key " up}")
     Sleep(releaseTime)
 }
@@ -206,9 +205,20 @@ Takes a list of keystrokes where each keystroke includes:
 - `delay`: Time to wait between key presses
 
 Checks if the GTA V window is active before sending each keystroke.
-Displays an error message and aborts if the GTA V window is no longer running.
+Displays an error message and aborts if either the user interrupted the macro, or if the GTA V window is no longer active or .
 */
 ProcessGTAKeystrokes(triggerSource, Keystrokes) {
+    static CheckUserInputStopConditions() {
+        for StopKey in USER_INPUT__CURRENTLY_PLAYING_MACRO__STOPPING_KEYS {
+            if GetKeyState(StopKey, "P") {
+                return true
+            }
+        }
+
+        return false
+    }
+
+
     ; Get the HWND of the first window matching GTA_WINDOW_IDENTIFIER
     gtaWindowID := WinExist(GTA_WINDOW_IDENTIFIER)
 
@@ -236,19 +246,28 @@ ProcessGTAKeystrokes(triggerSource, Keystrokes) {
     }
 
     for Keystroke in Keystrokes {
-        if not (WinExist("ahk_id " gtaWindowID) and WinActive("ahk_id " gtaWindowID) and ProcessGetName(WinGetPID("ahk_id " gtaWindowID)) == "GTA5.exe") {
-            MsgBox(
-                'ERROR: GTA V window is no longer active, aborting process.',
-                SCRIPT_TITLE,
-                "OK Icon! " . MSGBOX_SYSTEM_MODAL
-            )
+        if CheckUserInputStopConditions() {
             return false
         }
 
         loop Keystroke.count {
+            if not (WinExist("ahk_id " gtaWindowID) and WinActive("ahk_id " gtaWindowID) and ProcessGetName(WinGetPID("ahk_id " gtaWindowID)) == "GTA5.exe") {
+                MsgBox(
+                    'ERROR: GTA V window is no longer active, aborting process.',
+                    SCRIPT_TITLE,
+                    "OK Icon! " . MSGBOX_SYSTEM_MODAL
+                )
+                return false
+            }
+
+            if CheckUserInputStopConditions() {
+                return false
+            }
+
             SendKeyWithDelay(Keystroke.key, Keystroke.hold, Keystroke.delay)
         }
     }
+
     return true
 }
 
@@ -266,7 +285,7 @@ DropBST(triggerSource) {
         ; select [Drop Bull Shark]
     ]
 
-    ProcessGTAKeystrokes(triggerSource, BST_Keystrokes)
+    return ProcessGTAKeystrokes(triggerSource, BST_Keystrokes)
 }
 
 ReloadAllWeapons(triggerSource) {
@@ -305,7 +324,7 @@ ReloadAllWeapons(triggerSource) {
     ; exit [Interaction Menu]
     Reload_Keystrokes.Push({ count: 1, key: ",", hold: KeyHold, delay: 0 })
 
-    ProcessGTAKeystrokes(triggerSource, Reload_Keystrokes)
+    return ProcessGTAKeystrokes(triggerSource, Reload_Keystrokes)
 }
 
 ApplyHotkeyBST(*) {
