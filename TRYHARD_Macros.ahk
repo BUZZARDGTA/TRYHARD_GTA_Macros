@@ -41,6 +41,7 @@ TEXT_SPEED_VERY_FAST := "Very Fast: " . KEY_DELAY_VERY_FAST . "ms"
 HotkeyBST := DEFAULT_HOTKEY_BST
 HotkeyReload := DEFAULT_HOTKEY_RELOAD
 HotkeySpamRespawn := DEFAULT_HOTKEY_SPAMRESPAWN
+CurrentDefaultButton := false
 KeyHold := 50
 KeyDelay := 50
 IsMacroRunning := false
@@ -48,6 +49,17 @@ IsMacroRunning := false
 
 SetTitleMatchMode(3) ; Exact match mode
 HotIfWinActive(GTA_WINDOW_IDENTIFIER) ; Only enable Hotkeys when the GTA_WINDOW_IDENTIFIER conditions are found.
+
+On_WM_KEYDOWN(wParam, lParam, msg, Hwnd) {
+    if (wParam == 0x0D) { ; 0x0D is the virtual key code for the Enter key
+        CurrControl := GuiCtrlFromHwnd(Hwnd)
+        ; Simulate click on active (Default) "Apply" button when editing an Edit field and pressing ENTER.
+        if (RegexMatch(CurrControl.ClassNN, "^Edit\d+$") and (CurrentDefaultButton.Text == "Apply")) {
+            ControlClick(CurrentDefaultButton)
+            ControlFocus(CurrControl)
+        }
+    }
+}
 
 On_WM_MOUSEMOVE(wParam, lParam, msg, Hwnd) {
     static PrevHwnd := 0
@@ -410,6 +422,11 @@ ApplyHotkeyBST(*) {
 
     Hotkey(HotkeyBST, "Off")
 
+    if (HotkeyBST_Edit.Value == "") {
+        RemoveHotkey("HotkeyBST")
+        return true
+    }
+
     try {
         Hotkey(HotkeyBST_Edit.Value, (*) => RunMacro(DropBST, "Hotkey"))
     } catch error as err {
@@ -452,6 +469,11 @@ ApplyHotkeyReload(*) {
 
     Hotkey(HotkeyReload, "Off")
 
+    if (HotkeyReload_Edit.Value == "") {
+        RemoveHotkey("HotkeyReload")
+        return true
+    }
+
     try {
         Hotkey(HotkeyReload_Edit.Value, (*) => RunMacro(ReloadAllWeapons, "Hotkey"))
     } catch error as err {
@@ -493,6 +515,11 @@ ApplyHotkeySpamRespawn(*) {
     }
 
     Hotkey(HotkeySpamRespawn, "Off")
+
+    if (HotkeySpamRespawn_Edit.Value == "") {
+        RemoveHotkey("HotkeySpamRespawn")
+        return true
+    }
 
     try {
         Hotkey(HotkeySpamRespawn_Edit.Value, (*) => RunMacro(SpamRespawn, "Hotkey"))
@@ -603,16 +630,37 @@ ReloadAllWeapons_CheckBox.Value := 1
 
 AddSeparator(MyGui)
 
+OnEdit_Focus(ApplyButton) {
+    global CurrentDefaultButton
+
+    ApplyButton.Opt("+Default")
+
+    CurrentDefaultButton := ApplyButton
+}
+
+OnEdit_LoseFocus(ApplyButton) {
+    global CurrentDefaultButton
+
+    ApplyButton.Opt("-Default")
+
+    CurrentDefaultButton := false
+}
+
+
 MyGui.AddText(, 'Hotkey for "Drop BST" :')
 HotkeyBST_Edit := MyGui.AddEdit("w100 Limit17", DEFAULT_HOTKEY_BST)
+HotkeyBST_Edit.OnEvent("Focus", (*) => OnEdit_Focus(HotkeyBST_Button))
+HotkeyBST_Edit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(HotkeyBST_Button))
 HotkeyBST_Button := MyGui.AddButton("w66 x+10", "Apply")
-HotkeyBST_Button.OnEvent("Click", ApplyHotkeyBST)
+HotkeyBST_Button.OnEvent("LoseFocus", ApplyHotkeyBST)
 HotkeyBSTRemove_Button := MyGui.AddButton("w66 x+10", "Remove")
 HotkeyBSTRemove_Button.OnEvent("Click", (*) => RemoveHotkey("HotkeyBST"))
 HotkeyBSTReset_Button := MyGui.AddButton("w66 x+10", "Reset")
 HotkeyBSTReset_Button.OnEvent("Click", (*) => ResetHotkey("HotkeyBST"))
 MyGui.AddText("x10", 'Hotkey for "Reload All Weapons" :')
 HotkeyReload_Edit := MyGui.AddEdit("w100 Limit17", DEFAULT_HOTKEY_RELOAD)
+HotkeyReload_Edit.OnEvent("Focus", (*) => OnEdit_Focus(HotkeyReload_Button))
+HotkeyReload_Edit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(HotkeyReload_Button))
 HotkeyReload_Button := MyGui.AddButton("w66 x+10", "Apply")
 HotkeyReload_Button.OnEvent("Click", ApplyHotkeyReload)
 HotkeyReloadRemove_Button := MyGui.AddButton("w66 x+10", "Remove")
@@ -621,6 +669,8 @@ HotkeyReloadReset_Button := MyGui.AddButton("w66 x+10", "Reset")
 HotkeyReloadReset_Button.OnEvent("Click", (*) => ResetHotkey("HotkeyReload"))
 MyGui.AddText("x10", 'Hotkey for "Spam Respawn" :')
 HotkeySpamRespawn_Edit := MyGui.AddEdit("w100 Limit17", DEFAULT_HOTKEY_SPAMRESPAWN)
+HotkeySpamRespawn_Edit.OnEvent("Focus", (*) => OnEdit_Focus(HotkeySpamRespawn_Button))
+HotkeySpamRespawn_Edit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(HotkeySpamRespawn_Button))
 HotkeySpamRespawn_Button := MyGui.AddButton("w66 x+10", "Apply")
 HotkeySpamRespawn_Button.OnEvent("Click", ApplyHotkeySpamRespawn)
 HotkeySpamRespawnRemove_Button := MyGui.AddButton("w66 x+10", "Remove")
@@ -633,7 +683,7 @@ HotkeysHelp_Link.OnEvent("Click", Link_Click)
 
 AddSeparator(MyGui)
 
-Repo_Button := MyGui.AddButton("Default x+176", "Help / Check For Updates")
+Repo_Button := MyGui.AddButton("x+176", "Help / Check For Updates")
 Repo_Button.OnEvent("Click", openRepo)
 
 Hotkey(HotkeyBST, (*) => RunMacro(DropBST, "Hotkey"))
@@ -652,6 +702,7 @@ DropBST_Button.Enabled := true
 ReloadAllWeapons_Button.Enabled := true
 SpamRespawn_Button.Enabled := true
 
+OnMessage(0x0100, On_WM_KEYDOWN)
 OnMessage(0x0200, On_WM_MOUSEMOVE)
 
 A_TrayMenu.Insert("1&", "Hide", (*) => HideGui(MyGui))
