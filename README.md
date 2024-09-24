@@ -12,13 +12,22 @@ GTA Macros for TRYHARD players using AutoHotkey v2.
 
 > Yes, it works with all screen modes, including Full Screen.
 
-### Drop BST is not working
+### "Drop BST" is not working
 
 > Ensure you are in a CEO Organization.
 
+### "Reload All Weapons" sometimes fails
+
+> Ensure that either "Register as a Boss" or "SecuroServ CEO" appears in your interaction menu.
+> 
+> There is a known bug in GTA:O where "Register as a Boss" may sometimes randomly be hidden from the menu.
+
+
 ### Macros are not working consistently
 
-> Try selecting a slower "Macro Speed"; your computer's specs might be too low for the default one.
+> Try selecting a slower "Macro Speed".
+>
+> Your computer's specs or a generally slow session might be affecting the macro's consistency.
 
 # Screenshot
 
