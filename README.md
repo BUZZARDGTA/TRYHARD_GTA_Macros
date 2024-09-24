@@ -38,8 +38,6 @@ GTA Macros for TRYHARD players using AutoHotkey v2.
 
 - Pressing Enter in edit fields should trigger the corresponding "Apply" button, instead of triggering the "Help / Check For Updates" button.
 
-- Spamming macros (or triggering them too quickly) should queue unfinished ones, ensuring each macro is only added once to memory.
-
 
 # TODO (sorted by likelihood of completion)
 
