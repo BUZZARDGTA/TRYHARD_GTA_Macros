@@ -19,31 +19,17 @@ DEFAULT_HOTKEY_SPAMRESPAWN := "F3"
 TOOLTIP_DISPLAY_TIME := 250
 TOOLTIP_HIDE_TIME := 5000
 
-KEY_HOLD_VERY_SLOW := 60
-KEY_HOLD_SLOW := 50
-KEY_HOLD_NORMAL := 40
-KEY_HOLD_FAST := 30
-KEY_HOLD_VERY_FAST := 20
-
-KEY_DELAY_VERY_SLOW := 60
-KEY_DELAY_SLOW := 50
-KEY_DELAY_NORMAL := 40
-KEY_DELAY_FAST := 30
-KEY_DELAY_VERY_FAST := 20
-
-TEXT_SPEED_VERY_SLOW := "Very Slow: " . KEY_DELAY_VERY_SLOW . "ms"
-TEXT_SPEED_SLOW := "Slow: " . KEY_DELAY_SLOW . "ms"
-TEXT_SPEED_NORMAL := "Normal: " . KEY_DELAY_NORMAL . "ms"
-TEXT_SPEED_FAST := "Fast: " . KEY_DELAY_FAST . "ms"
-TEXT_SPEED_VERY_FAST := "Very Fast: " . KEY_DELAY_VERY_FAST . "ms"
+KEY_DELAY_SLOWEST := 100
+KEY_DELAY_FASTEST := 10
+KEY_DELAY_DEFAULT := 40
 
 ; Globals
 HotkeyBST := DEFAULT_HOTKEY_BST
 HotkeyReload := DEFAULT_HOTKEY_RELOAD
 HotkeySpamRespawn := DEFAULT_HOTKEY_SPAMRESPAWN
 CurrentDefaultButton := false
-KeyHold := 50
-KeyDelay := 50
+KeyHold := KEY_DELAY_DEFAULT
+KeyDelay := KEY_DELAY_DEFAULT
 IsMacroRunning := false
 
 
@@ -77,6 +63,28 @@ On_WM_MOUSEMOVE(wParam, lParam, msg, Hwnd) {
         }
 
         PrevHwnd := Hwnd
+    }
+}
+
+On_WM_MOUSEWHEEL(wParam, lParam, msg, Hwnd) {
+    static GET_WHEEL_DELTA_WPARAM(wParam) => (
+        ; Credit: https://github.com/Seven0528/ScrollableGui
+        wParam<<32>>48
+    )
+
+    ; Get the cursor position (to check if it's over the slider)
+    MouseGetPos(,,, &ControlHwnd, 2)
+
+    ; Check if the mouse is over the slider
+    if ((Speed_Slider.Enabled == true) and (ControlHwnd = Speed_Slider.Hwnd)) {
+        delta := GET_WHEEL_DELTA_WPARAM(wParam) ; Get scroll direction (up or down)
+
+        ; Adjust the slider value based on scroll direction
+        if (delta == 120) { ; Scrolled up
+            Speed_Slider.Value := Speed_Slider.Value - 10
+        } else if (delta == -120) { ; Scrolled down
+            Speed_Slider.Value := Speed_Slider.Value + 10
+        }
     }
 }
 
@@ -196,40 +204,47 @@ CenterElements(gui, elements*) {
     }
 }
 
+GenerateMacroSpeedText(NewSpeed) {
+    return "Macro Speed [" . NewSpeed . "ms]:"
+}
 
-SetDelay(*) {
+UpdateMacroSpeed(GuiCtrlObj, Info) {
+    static RoundToNearestTen(value) {
+        return Round(value / 10) * 10
+    }
+
     global KeyDelay, KeyHold
 
-    switch Speed_DropdownList.Text {
-        case TEXT_SPEED_VERY_SLOW:
-            KeyDelay := KEY_DELAY_VERY_SLOW
-            KeyHold := KEY_HOLD_VERY_SLOW
-        case TEXT_SPEED_SLOW:
-            KeyDelay := KEY_DELAY_SLOW
-            KeyHold := KEY_HOLD_SLOW
-        case TEXT_SPEED_NORMAL:
-            KeyDelay := KEY_DELAY_NORMAL
-            KeyHold := KEY_HOLD_NORMAL
-        case TEXT_SPEED_FAST:
-            KeyDelay := KEY_DELAY_FAST
-            KeyHold := KEY_HOLD_FAST
-            MsgBox(
-                "This method is only recommended in small lobbies, with a limited number of players, as it may not work consistently otherwise.",
-                SCRIPT_TITLE,
-                "OK Iconi " . MSGBOX_SYSTEM_MODAL
-            )
-        case TEXT_SPEED_VERY_FAST:
-            KeyDelay := KEY_DELAY_VERY_FAST
-            KeyHold := KEY_HOLD_VERY_FAST
-            MsgBox(
-                "This method is only recommended in invite-only sessions with a very limited number of players, as it may not work consistently otherwise.",
-                SCRIPT_TITLE,
-                "OK Iconi " . MSGBOX_SYSTEM_MODAL
-            )
-        default:
-            KeyDelay := KEY_DELAY_NORMAL
-            KeyHold := KEY_HOLD_NORMAL
+    UpdatedSliderValue := RoundToNearestTen(GuiCtrlObj.Value)
+    GuiCtrlObj.Value := UpdatedSliderValue
+    ; Whenver it's 3 of len (ex: 100) it breaks, this bug drives me crazy
+    Speed_Text.Value := GenerateMacroSpeedText(UpdatedSliderValue)
+
+    ; This fixes an issue where the user can still scroll with the default properties while a message box is displayed.
+    Speed_Slider.Enabled := false
+    if (UpdatedSliderValue <= 10) {
+        MsgBox(
+            "Legend said, only NASA computers can run this!",
+            SCRIPT_TITLE,
+            "OK Iconi " . MSGBOX_SYSTEM_MODAL
+        )
+    } else if (UpdatedSliderValue <= 20) {
+        MsgBox(
+            "This method is only recommended in invite-only sessions with a very limited number of players and a high-performance CPU and GPU; even then, consistent results are not even guaranteed.",
+            SCRIPT_TITLE,
+            "OK Iconi " . MSGBOX_SYSTEM_MODAL
+        )
+    } else if (UpdatedSliderValue <= 30) {
+        MsgBox(
+            "This method is only recommended in small lobbies, with a limited number of players, as it may not work consistently otherwise.",
+            SCRIPT_TITLE,
+            "OK Iconi " . MSGBOX_SYSTEM_MODAL
+        )
     }
+    Speed_Slider.Enabled := true
+
+    KeyDelay := UpdatedSliderValue
+    KeyHold := UpdatedSliderValue
 }
 
 openRepo(*) {
@@ -364,7 +379,7 @@ ReloadAllWeapons(triggerSource) {
     )
 
     if (ReloadAllWeapons_CheckBox.Value == 1) {
-        static NumOfWeaponTypesToIterate := 8
+        static NumOfWeaponTypesToIterate := 9
 
         ; Iterate through each [Ammo Type] and select the [Full Ammo $x] option for each
         Loop NumOfWeaponTypesToIterate {
@@ -599,21 +614,25 @@ ResetHotkey(HotkeyToReset) {
 
 
 MyGui := Gui()
-MyGui.Title := SCRIPT_TITLE
 MyGui.Opt("+AlwaysOnTop")
+MyGui.Title := SCRIPT_TITLE
 
-Speed_Text := MyGui.AddText(, "Select Macro Speed:")
-Speed_DropdownList := MyGui.AddDropDownList(, [
-    TEXT_SPEED_VERY_SLOW,
-    TEXT_SPEED_SLOW,
-    TEXT_SPEED_NORMAL,
-    TEXT_SPEED_FAST,
-    TEXT_SPEED_VERY_FAST,
-])
-Speed_DropdownList.Choose(3)
-Speed_DropdownList.OnEvent("Change", SetDelay)
+; Oh please do not ask me what the fuck I've done with x and y I just tried to make it works and it does.
+Speed_Text := MyGui.AddText("y+10 w108", GenerateMacroSpeedText(KEY_DELAY_DEFAULT)) ; here keeping w108 is important to keep (e.g., a 3-digit number like 100) showing up correctly.
+MyGui.AddText("xm x32 y35", "[" . KEY_DELAY_SLOWEST . "ms]")
+Speed_Slider := MyGui.AddSlider("yp y30 w200", KEY_DELAY_SLOWEST - KEY_DELAY_DEFAULT + 10)
+Speed_Slider.Opt("Invert")
+Speed_Slider.Opt("Line10")
+Speed_Slider.Opt("Page25")
+Speed_Slider.Opt("Range10-100")
+Speed_Slider.Opt("Thick30")
+Speed_Slider.Opt("TickInterval10")
+Speed_Slider.Opt("ToolTip")
+Speed_Slider.OnEvent("Change", UpdateMacroSpeed)
+MyGui.AddText("yp y35", "[" . KEY_DELAY_FASTEST . "ms]")
+; Dev-Note: alternative code --> https://discord.com/channels/288498150145261568/866440127320817684/1288240872630259815
 
-AddSeparator(MyGui)
+AddSeparator(MyGui, {text1: "x10"})
 
 DropBST_Button := MyGui.AddButton("Disabled", "Drop BST*")
 DropBST_Button.OnEvent("Click", (*) => RunMacro(DropBST, "Button"))
@@ -690,10 +709,10 @@ Hotkey(HotkeyBST, (*) => RunMacro(DropBST, "Hotkey"))
 Hotkey(HotkeyReload, (*) => RunMacro(ReloadAllWeapons, "Hotkey"))
 Hotkey(HotkeySpamRespawn, (*) => RunMacro(SpamRespawn, "Hotkey"))
 
-MyGui.Show("w350 h410")
+MyGui.Show("w350 h430")
 
 CenterElement(MyGui, Speed_Text)
-CenterElement(MyGui, Speed_DropdownList)
+CenterElement(MyGui, Speed_Slider)
 CenterElements(MyGui, DropBST_Button, ReloadAllWeapons_Button, SpamRespawn_Button)
 CenterElement(MyGui, ReloadAllWeapons_CheckBox)
 
@@ -704,6 +723,7 @@ SpamRespawn_Button.Enabled := true
 
 OnMessage(0x0100, On_WM_KEYDOWN)
 OnMessage(0x0200, On_WM_MOUSEMOVE)
+OnMessage(0x020A, On_WM_MOUSEWHEEL)
 
 A_TrayMenu.Insert("1&", "Hide", (*) => HideGui(MyGui))
 A_TrayMenu.Insert("2&")
