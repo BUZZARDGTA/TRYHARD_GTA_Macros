@@ -19,7 +19,7 @@ GTA Macros for TRYHARD players using AutoHotkey v2.
 ### "Reload All Weapons" sometimes fails
 
 > Ensure that either "Register as a Boss" or "SecuroServ CEO" appears in your interaction menu.
-> 
+>
 > There is a known bug in GTA:O where "Register as a Boss" may sometimes randomly be hidden from the menu.
 
 
@@ -38,10 +38,6 @@ GTA Macros for TRYHARD players using AutoHotkey v2.
 # Known Bug (unlikely to be fixed)
 
 - The macro does not consistently stop when the following keys are <ins>**quickly**</ins> pressed: \["LButton", "RButton", "Enter", "Escape", "Backspace"\]. While this currently randomely works, the implementation is not optimized. I recommend holding any of these keys down for a full second for it to works every time.
-
-# Known Bug (likely to be fixed soon)
-
-- After restarting the game, the script ain't working anymore.
 
 # TODO (sorted by likelihood of completion)
 

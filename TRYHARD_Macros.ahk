@@ -34,7 +34,6 @@ IsMacroRunning := false
 
 
 SetTitleMatchMode(3) ; Exact match mode
-HotIfWinActive(GTA_WINDOW_IDENTIFIER) ; Only enable Hotkeys when the GTA_WINDOW_IDENTIFIER conditions are found.
 
 On_WM_KEYDOWN(wParam, lParam, msg, Hwnd) {
     if (wParam == 0x0D) { ; 0x0D is the virtual key code for the Enter key
@@ -259,6 +258,34 @@ SendKeyWithDelay(key, holdTime, releaseTime) {
     Sleep(releaseTime)
 }
 
+IsValidGTAwinRunning(Options := {}) {
+    ; Get the HWND of the first window matching GTA_WINDOW_IDENTIFIER or uses the one supplied from user.
+    gtaWindowID := Options.HasOwnProp("hwnd") ? Options.hwnd : ""
+    CheckIsActive := Options.HasOwnProp("AndActive") ? Options.AndActive : ""
+
+    if gtaWindowID == "" {
+        if not WinExist(GTA_WINDOW_IDENTIFIER) {
+            return false
+        }
+    } else {
+        if gtaWindowID == 0 {
+            return false
+        }
+
+        if not WinExist(GTA_WINDOW_IDENTIFIER . " ahk_id " . gtaWindowID) {
+            return false
+        }
+    }
+
+    if not CheckIsActive == "" {
+        if CheckIsActive == WinActive("ahk_id " gtaWindowID) {
+            return false
+        }
+    }
+
+    return true
+}
+
 /*
 Processes a sequence of keystrokes for the game.
 Takes a list of keystrokes where each keystroke includes:
@@ -285,7 +312,7 @@ ProcessGTAKeystrokes(triggerSource, Keystrokes) {
     ; Get the HWND of the first window matching GTA_WINDOW_IDENTIFIER
     gtaWindowID := WinExist(GTA_WINDOW_IDENTIFIER)
 
-    if not (WinExist("ahk_id " gtaWindowID) and ProcessGetName(WinGetPID("ahk_id " gtaWindowID)) == "GTA5.exe") {
+    if not IsValidGTAwinRunning({ hwnd: gtaWindowID }) {
         MsgBox(
             'ERROR: Unable to find a window titled "Grand Theft Auto V" using class "grcWindow" and with process name "GTA5.exe".`n`nPlease ensure GTA V is currently running.',
             SCRIPT_TITLE,
@@ -294,7 +321,7 @@ ProcessGTAKeystrokes(triggerSource, Keystrokes) {
         return false
     }
 
-    if (triggerSource == "Button" and WinExist("ahk_id " gtaWindowID) and not WinActive("ahk_id " gtaWindowID) and ProcessGetName(WinGetPID("ahk_id " gtaWindowID)) == "GTA5.exe") {
+    if triggerSource == "Button" and not WinActive("ahk_id " gtaWindowID) {
         MyGui.Minimize()
         WinActivate("ahk_id " gtaWindowID)
         Sleep(KeyDelay * 5)
@@ -317,7 +344,7 @@ ProcessGTAKeystrokes(triggerSource, Keystrokes) {
         Keystroke.delay := Keystroke.HasOwnProp("delay") ? Keystroke.delay : KeyDelay
 
         loop Keystroke.count {
-            if not (WinExist("ahk_id " gtaWindowID) and WinActive("ahk_id " gtaWindowID) and ProcessGetName(WinGetPID("ahk_id " gtaWindowID)) == "GTA5.exe") {
+            if not IsValidGTAwinRunning({ hwnd: gtaWindowID, AndActive: true }) {
                 MsgBox(
                     'ERROR: GTA V window is no longer active, aborting process.',
                     SCRIPT_TITLE,
@@ -345,12 +372,12 @@ ProcessGTAKeystrokes(triggerSource, Keystrokes) {
 RunMacro(macroFunc, triggerSource) {
     global isMacroRunning
 
-    if (isMacroRunning) {
+    if isMacroRunning {
         return false
     }
     isMacroRunning := true
 
-    result := macroFunc(triggerSource)  ; Call the specific macro function
+    result := macroFunc(triggerSource)
 
     isMacroRunning := false
     return result
@@ -612,6 +639,14 @@ ResetHotkey(HotkeyToReset) {
     }
 }
 
+IsGTARunning_Callback() {
+    IsGTAwinActive := IsValidGTAwinRunning({ AndActive: true })
+
+    for _hotkey in [HotkeyBST, HotkeyReload, HotkeySpamRespawn] {
+        hotkey(_hotkey, IsGTAwinActive ? "on" : "off")
+    }
+}
+
 
 MyGui := Gui()
 MyGui.Opt("+AlwaysOnTop")
@@ -728,3 +763,10 @@ OnMessage(0x020A, On_WM_MOUSEWHEEL)
 A_TrayMenu.Insert("1&", "Hide", (*) => HideGui(MyGui))
 A_TrayMenu.Insert("2&")
 SetTimer(() => UpdateTrayMenuShowHideOptionState(MyGui), 100)
+
+/*
+HotIfWinActive(GTA_WINDOW_IDENTIFIER)
+Known-Bug: After restarting the game this method ain't working anymore.
+So I fixed it by implementing my own one just below.
+*/
+SetTimer(IsGTARunning_Callback, 100) ; Only enable Hotkeys when the GTA_WINDOW_IDENTIFIER conditions are found.
