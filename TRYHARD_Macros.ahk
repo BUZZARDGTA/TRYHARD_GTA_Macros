@@ -639,15 +639,22 @@ ResetHotkey(HotkeyToReset) {
     }
 }
 
-ToggleHotkey(HotkeyToToggle) {
+GetHotkeyToggleButtonsMap() {
     Buttons_Map := Map()
-    Buttons_Map.Set("HotkeyBST", [HotkeyBSTToggle_Button, HotkeyBST])
-    Buttons_Map.Set("HotkeyReload", [HotkeyReloadToggle_Button, HotkeyReload])
-    Buttons_Map.Set("HotkeySpamRespawn", [HotkeySpamRespawnToggle_Button, HotkeySpamRespawn])
+    Buttons_Map.Set("HotkeyBST", { ToggleButton: HotkeyBSTToggle_Button, Hotkey: HotkeyBST })
+    Buttons_Map.Set("HotkeyReload", { ToggleButton: HotkeyReloadToggle_Button, Hotkey: HotkeyReload })
+    Buttons_Map.Set("HotkeySpamRespawn", { ToggleButton: HotkeySpamRespawnToggle_Button, Hotkey: HotkeySpamRespawn })
+
+    return Buttons_Map
+}
+
+ToggleHotkey(HotkeyToToggle) {
+    Buttons_Map := GetHotkeyToggleButtonsMap()
 
     if Buttons_Map.Has(HotkeyToToggle) {
-        ToggleButton := Buttons_Map[HotkeyToToggle][1]
-        _Hotkey := Buttons_Map[HotkeyToToggle][2]
+        ToggleItem := Buttons_Map[HotkeyToToggle]
+        ToggleButton := ToggleItem.ToggleButton
+        _Hotkey := ToggleItem.Hotkey
 
         if (ToggleButton.Text == "Enable") {
             Hotkey(_Hotkey, "On")
@@ -660,16 +667,12 @@ ToggleHotkey(HotkeyToToggle) {
 }
 
 IsGTARunning_Callback() {
+    Buttons_Map := GetHotkeyToggleButtonsMap()
     IsGTAwinActive := IsValidGTAwinRunning({ AndActive: true })
 
-    Buttons_Map := Map()
-    Buttons_Map.Set("HotkeyBST", [HotkeyBSTToggle_Button, HotkeyBST])
-    Buttons_Map.Set("HotkeyReload", [HotkeyReloadToggle_Button, HotkeyReload])
-    Buttons_Map.Set("HotkeySpamRespawn", [HotkeySpamRespawnToggle_Button, HotkeySpamRespawn])
-
     for HotkeyName, Data in Buttons_Map {
-        ToggleButton := Data[1]
-        _Hotkey := Data[2]
+        ToggleButton := Data.ToggleButton
+        _Hotkey := Data.Hotkey
 
         if (ToggleButton.Text == "Disable") {
             Hotkey(_Hotkey, IsGTAwinActive ? "On" : "Off")
