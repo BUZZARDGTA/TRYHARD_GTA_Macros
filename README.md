@@ -6,7 +6,7 @@ GTA Macros for TRYHARD players using AutoHotkey v2.
 
 ### Is it detected?
 
-> I have not been banned while using this since I started developing the project.
+> I have not been banned while using this since I started developing it.
 
 ### Does it work in Full Screen?
 
