@@ -445,6 +445,31 @@ SpamRespawn(triggerSource) {
     return ProcessGTAKeystrokes(triggerSource, SpamRespawn_Keystrokes)
 }
 
+RemoveHotkey(HotkeyToRemove) {
+    if (HotkeyToRemove == "HotkeyBST") {
+        global HotkeyBST
+        if not (HotkeyBST == false) {
+            Hotkey(HotkeyBST, "Off")
+        }
+        HotkeyBST := false
+        HotkeyBST_Edit.Value := ""
+    } else if (HotkeyToRemove == "HotkeyReload") {
+        global HotkeyReload
+        if not (HotkeyBST == false) {
+            Hotkey(HotkeyBST, "Off")
+        }
+        HotkeyReload := false
+        HotkeyReload_Edit.Value := ""
+    } else if (HotkeyToRemove == "HotkeySpamRespawn") {
+        global HotkeySpamRespawn
+        if not (HotkeyBST == false) {
+            Hotkey(HotkeyBST, "Off")
+        }
+        HotkeySpamRespawn := false
+        HotkeySpamRespawn_Edit.Value := ""
+    }
+}
+
 ApplyHotkeyBST(*) {
     global HotkeyBST
 
@@ -586,31 +611,6 @@ ApplyHotkeySpamRespawn(*) {
     return true
 }
 
-RemoveHotkey(HotkeyToRemove) {
-    if (HotkeyToRemove == "HotkeyBST") {
-        global HotkeyBST
-        if not (HotkeyBST == false) {
-            Hotkey(HotkeyBST, "Off")
-        }
-        HotkeyBST := false
-        HotkeyBST_Edit.Value := ""
-    } else if (HotkeyToRemove == "HotkeyReload") {
-        global HotkeyReload
-        if not (HotkeyBST == false) {
-            Hotkey(HotkeyBST, "Off")
-        }
-        HotkeyReload := false
-        HotkeyReload_Edit.Value := ""
-    } else if (HotkeyToRemove == "HotkeySpamRespawn") {
-        global HotkeySpamRespawn
-        if not (HotkeyBST == false) {
-            Hotkey(HotkeyBST, "Off")
-        }
-        HotkeySpamRespawn := false
-        HotkeySpamRespawn_Edit.Value := ""
-    }
-}
-
 ResetHotkey(HotkeyToReset) {
     if (HotkeyToReset == "HotkeyBST") {
         global HotkeyBST
@@ -639,11 +639,41 @@ ResetHotkey(HotkeyToReset) {
     }
 }
 
+ToggleHotkey(HotkeyToToggle) {
+    Buttons_Map := Map()
+    Buttons_Map.Set("HotkeyBST", [HotkeyBSTToggle_Button, HotkeyBST])
+    Buttons_Map.Set("HotkeyReload", [HotkeyReloadToggle_Button, HotkeyReload])
+    Buttons_Map.Set("HotkeySpamRespawn", [HotkeySpamRespawnToggle_Button, HotkeySpamRespawn])
+
+    if Buttons_Map.Has(HotkeyToToggle) {
+        ToggleButton := Buttons_Map[HotkeyToToggle][1]
+        _Hotkey := Buttons_Map[HotkeyToToggle][2]
+
+        if (ToggleButton.Text == "Enable") {
+            Hotkey(_Hotkey, "On")
+            ToggleButton.Text := "Disable"
+        } else if (ToggleButton.Text == "Disable") {
+            Hotkey(_Hotkey, "Off")
+            ToggleButton.Text := "Enable"
+        }
+    }
+}
+
 IsGTARunning_Callback() {
     IsGTAwinActive := IsValidGTAwinRunning({ AndActive: true })
 
-    for _hotkey in [HotkeyBST, HotkeyReload, HotkeySpamRespawn] {
-        hotkey(_hotkey, IsGTAwinActive ? "on" : "off")
+    Buttons_Map := Map()
+    Buttons_Map.Set("HotkeyBST", [HotkeyBSTToggle_Button, HotkeyBST])
+    Buttons_Map.Set("HotkeyReload", [HotkeyReloadToggle_Button, HotkeyReload])
+    Buttons_Map.Set("HotkeySpamRespawn", [HotkeySpamRespawnToggle_Button, HotkeySpamRespawn])
+
+    for HotkeyName, Data in Buttons_Map {
+        ToggleButton := Data[1]
+        _Hotkey := Data[2]
+
+        if (ToggleButton.Text == "Disable") {
+            Hotkey(_Hotkey, IsGTAwinActive ? "On" : "Off")
+        }
     }
 }
 
@@ -707,30 +737,30 @@ HotkeyBST_Edit.OnEvent("Focus", (*) => OnEdit_Focus(HotkeyBST_Button))
 HotkeyBST_Edit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(HotkeyBST_Button))
 HotkeyBST_Button := MyGui.AddButton("w66 x+10", "Apply")
 HotkeyBST_Button.OnEvent("LoseFocus", ApplyHotkeyBST)
-HotkeyBSTRemove_Button := MyGui.AddButton("w66 x+10", "Remove")
-HotkeyBSTRemove_Button.OnEvent("Click", (*) => RemoveHotkey("HotkeyBST"))
 HotkeyBSTReset_Button := MyGui.AddButton("w66 x+10", "Reset")
 HotkeyBSTReset_Button.OnEvent("Click", (*) => ResetHotkey("HotkeyBST"))
+HotkeyBSTToggle_Button := MyGui.AddButton("w66 x+10", "Disable")
+HotkeyBSTToggle_Button.OnEvent("Click", (*) => ToggleHotkey("HotkeyBST"))
 MyGui.AddText("x10", 'Hotkey for "Reload All Weapons" :')
 HotkeyReload_Edit := MyGui.AddEdit("w100 Limit17", DEFAULT_HOTKEY_RELOAD)
 HotkeyReload_Edit.OnEvent("Focus", (*) => OnEdit_Focus(HotkeyReload_Button))
 HotkeyReload_Edit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(HotkeyReload_Button))
 HotkeyReload_Button := MyGui.AddButton("w66 x+10", "Apply")
 HotkeyReload_Button.OnEvent("Click", ApplyHotkeyReload)
-HotkeyReloadRemove_Button := MyGui.AddButton("w66 x+10", "Remove")
-HotkeyReloadRemove_Button.OnEvent("Click", (*) => RemoveHotkey("HotkeyReload"))
 HotkeyReloadReset_Button := MyGui.AddButton("w66 x+10", "Reset")
 HotkeyReloadReset_Button.OnEvent("Click", (*) => ResetHotkey("HotkeyReload"))
+HotkeyReloadToggle_Button := MyGui.AddButton("w66 x+10", "Disable")
+HotkeyReloadToggle_Button.OnEvent("Click", (*) => ToggleHotkey("HotkeyReload"))
 MyGui.AddText("x10", 'Hotkey for "Spam Respawn" :')
 HotkeySpamRespawn_Edit := MyGui.AddEdit("w100 Limit17", DEFAULT_HOTKEY_SPAMRESPAWN)
 HotkeySpamRespawn_Edit.OnEvent("Focus", (*) => OnEdit_Focus(HotkeySpamRespawn_Button))
 HotkeySpamRespawn_Edit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(HotkeySpamRespawn_Button))
 HotkeySpamRespawn_Button := MyGui.AddButton("w66 x+10", "Apply")
 HotkeySpamRespawn_Button.OnEvent("Click", ApplyHotkeySpamRespawn)
-HotkeySpamRespawnRemove_Button := MyGui.AddButton("w66 x+10", "Remove")
-HotkeySpamRespawnRemove_Button.OnEvent("Click", (*) => RemoveHotkey("HotkeySpamRespawn"))
 HotkeySpamRespawnReset_Button := MyGui.AddButton("w66 x+10", "Reset")
 HotkeySpamRespawnReset_Button.OnEvent("Click", (*) => ResetHotkey("HotkeySpamRespawn"))
+HotkeySpamRespawnToggle_Button := MyGui.AddButton("w66 x+10", "Disable")
+HotkeySpamRespawnToggle_Button.OnEvent("Click", (*) => ToggleHotkey("HotkeySpamRespawn"))
 
 HotkeysHelp_Link := MyGui.AddLink("x10", 'Full list of possible Hotkeys:`n<a id="KeyListHelp" href="https://www.autohotkey.com/docs/v2/KeyList.htm">https://www.autohotkey.com/docs/v2/KeyList.htm</a>')
 HotkeysHelp_Link.OnEvent("Click", Link_Click)
