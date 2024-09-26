@@ -32,7 +32,7 @@ GTA Macros for TRYHARD players using AutoHotkey v2.
 # Screenshot
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/3c45ec86-f69e-46d2-a753-7e7e2973e07f" alt="TRYHARD Macros" style="width: 35%;">
+  <img src="https://github.com/user-attachments/assets/124d2dd4-9190-44a9-b971-e3154d5c7546" alt="TRYHARD Macros" style="width: 35%;">
 </div>
 
 # Known Bug (unlikely to be fixed)
