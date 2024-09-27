@@ -6,6 +6,9 @@
 DEBUG_ENABLED := false
 
 SCRIPT_TITLE := "TRYHARD Macros"
+UPDATER_SCRIPT_TITLE := "Updater - " . SCRIPT_TITLE
+SCRIPT_VERSION := "v1.1.0 - 26/09/2024 (21:28)"
+SCRIPT_UPDATER_API_URL := "https://api.github.com/repos/Illegal-Services/TRYHARD_GTA_Macros/releases/latest"
 SCRIPT_WINDOW_IDENTIFIER := SCRIPT_TITLE . " ahk_class " . "AutoHotkeyGUI" . " ahk_pid " . WinGetPID(A_ScriptHwnd)
 GTA_WINDOW_IDENTIFIER := "Grand Theft Auto V ahk_class grcWindow ahk_exe GTA5.exe"
 USER_INPUT__CURRENTLY_PLAYING_MACRO__STOPPING_KEYS := ["LButton", "RButton", "Enter", "Escape", "Backspace"]
@@ -91,6 +94,17 @@ Link_Click(Ctrl, ID, HREF) {
     Run(HREF)
 }
 
+WebRequest(method, url) {
+    whr := ComObject("WinHttp.WinHttpRequest.5.1")
+
+    whr.Open(method, url, true)
+    whr.Send()
+    ; Using 'true' above and the call below allows the script to remain responsive.
+    whr.WaitForResponse()
+
+    return { Status: whr.Status, Text: whr.ResponseText }
+}
+
 Pluralize(count, singular, plural := "") {
     if count > 1 {
         return plural ? plural : singular . "s"
@@ -118,30 +132,6 @@ ShowGui(gui) {
 
 HideGui(gui) {
     gui.Hide()
-}
-
-UpdateTrayMenuShowHideOptionState(MyGui) {
-    if WinExist(SCRIPT_WINDOW_IDENTIFIER) {
-        ItemName := "Hide"
-        ActionFunc := (*) => HideGui(MyGui)
-        RenameFrom := "Show"
-    } else {
-        ItemName := "Show"
-        ActionFunc := (*) => ShowGui(MyGui)
-        RenameFrom := "Hide"
-    }
-
-    try {
-        A_TrayMenu.Rename(RenameFrom, ItemName)
-    } catch error as err {
-        if not ((err.what == "Menu.Prototype.Rename") and (err.Message == "Nonexistent menu item.")) {
-            throw err
-        }
-    } else {
-        A_TrayMenu.Add(ItemName, ActionFunc)
-    } finally {
-        A_TrayMenu.Default := ItemName
-    }
 }
 
 AddSeparator(gui, Options := {}) {
@@ -246,8 +236,82 @@ UpdateMacroSpeed(GuiCtrlObj, Info) {
     KeyHold := UpdatedSliderValue
 }
 
-openRepo(*) {
+OpenRepo(*) {
     Run("https://github.com/Illegal-Services/TRYHARD_GTA_Macros")
+}
+
+Updater(Source) {
+    FormatTimestampToAHK(Timestamp, TimestampSource) {
+        if TimestampSource == "SCRIPT_VERSION" {
+            if RegExMatch(Timestamp, "(\d{2})/(\d{2})/(\d{4}) \((\d{2}):(\d{2})\)", &matches) {
+                return matches[3] . matches[2] . matches[1] . matches[4] . matches[5] ; . "00"
+            }
+        } else if TimestampSource == "GitHub" {
+            if RegExMatch(Timestamp, "(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})Z", &matches) {
+                return matches[1] . matches[2] . matches[3] . matches[4] . matches[5] . matches[6]
+            }
+        }
+
+        throw Error("Invalid timestamp format.")
+    }
+
+    GetLatestReleaseInfo() {
+        try {
+            Response := WebRequest("GET", SCRIPT_UPDATER_API_URL)
+
+            if Response.Status == 200 {
+                DownloadUrl := RegExMatch(Response.Text, '"html_url"\s*:\s*"(https:\/\/github\.com\/Illegal-Services\/TRYHARD_GTA_Macros\/releases\/tag\/[^"]+)', &urlMatch) ? urlMatch[1] : ""
+                LatestVersion := RegExMatch(Response.Text, '"tag_name"\s*:\s*"([^"]+)"', &VersionMatch) ? VersionMatch[1] : ""
+                ReleaseDate := RegExMatch(Response.Text, '"published_at"\s*:\s*"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)"', &DateMatch) ? FormatTimestampToAHK(DateMatch[1], "GitHub") : ""
+
+                return { LatestVersion: LatestVersion, ReleaseDate: ReleaseDate, DownloadUrl: DownloadUrl }
+            }
+        }
+
+        throw Error("Error: Failed fetching release info.")
+    }
+
+
+    AHKscriptVersion := FormatTimestampToAHK(SCRIPT_VERSION, "SCRIPT_VERSION")
+
+    try {
+        LatestRelease := GetLatestReleaseInfo()
+    } catch error as err {
+        if (err.Message == "Error: Failed fetching release info.") {
+            MsgBox(
+                "Error: Failed fetching release info.",
+                UPDATER_SCRIPT_TITLE,
+                "OK Icon! " . MSGBOX_SYSTEM_MODAL
+            )
+        } else {
+            throw err
+        }
+    } else {
+        if DateDiff(LatestRelease.releaseDate, AHKscriptVersion, "Seconds") > 0 {
+            MsgBox_Text := "New version found. Do you want to update ?`n`n"
+            MsgBox_Text .= "Current Version: " . SCRIPT_VERSION . "`n"
+            MsgBox_Text .= "Latest Version: " . LatestRelease.LatestVersion . " - " . FormatTime(LatestRelease.ReleaseDate, "dd/MM/yyyy (HH:mm)")
+            MsgBox_Result := MsgBox(
+                MsgBox_Text,
+                UPDATER_SCRIPT_TITLE,
+                "YesNo Iconi " . MSGBOX_SYSTEM_MODAL
+            )
+            if MsgBox_Result == "Yes" {
+                Run(LatestRelease.DownloadUrl)
+            }
+        } else {
+            if Source == "MANUAL_CHECK" {
+                MsgBox_Text := "You are up-to-date :)`n`n"
+                MsgBox_Text .= "Current Version: " . SCRIPT_VERSION . "`n"
+                MsgBox_Text .= "Latest Version: " . LatestRelease.LatestVersion . " - " . FormatTime(LatestRelease.ReleaseDate, "dd/MM/yyyy (HH:mm)") . "`n"
+                MsgBox(
+                    MsgBox_Text,
+                    UPDATER_SCRIPT_TITLE,
+                    "Ok Iconi " . MSGBOX_SYSTEM_MODAL
+                )
+            }
+        }
+    }
 }
 
 ; Define a function to send key press, hold, and release
@@ -268,11 +332,7 @@ IsValidGTAwinRunning(Options := {}) {
             return false
         }
     } else {
-        if gtaWindowID == 0 {
-            return false
-        }
-
-        if not WinExist(GTA_WINDOW_IDENTIFIER . " ahk_id " . gtaWindowID) {
+        if (gtaWindowID == 0) or (not WinExist(GTA_WINDOW_IDENTIFIER . " ahk_id " . gtaWindowID)) {
             return false
         }
     }
@@ -666,6 +726,30 @@ ToggleHotkey(HotkeyToToggle) {
     }
 }
 
+UpdateTrayMenuShowHideOptionState(MyGui) {
+    if WinExist(SCRIPT_WINDOW_IDENTIFIER) {
+        ItemName := "Hide"
+        ActionFunc := (*) => HideGui(MyGui)
+        RenameFrom := "Show"
+    } else {
+        ItemName := "Show"
+        ActionFunc := (*) => ShowGui(MyGui)
+        RenameFrom := "Hide"
+    }
+
+    try {
+        A_TrayMenu.Rename(RenameFrom, ItemName)
+    } catch error as err {
+        if not ((err.what == "Menu.Prototype.Rename") and (err.Message == "Nonexistent menu item.")) {
+            throw err
+        }
+    } else {
+        A_TrayMenu.Add(ItemName, ActionFunc)
+    } finally {
+        A_TrayMenu.Default := ItemName
+    }
+}
+
 IsGTARunning_Callback() {
     Buttons_Map := GetHotkeyToggleButtonsMap()
     IsGTAwinActive := IsValidGTAwinRunning({ AndActive: true })
@@ -770,12 +854,15 @@ HotkeysHelp_Link.OnEvent("Click", Link_Click)
 
 AddSeparator(MyGui)
 
-Repo_Button := MyGui.AddButton("x+176", "Help / Check For Updates")
-Repo_Button.OnEvent("Click", openRepo)
+Help_Button := MyGui.AddButton("x+70", "Open GitHub Repository")
+Help_Button.OnEvent("Click", OpenRepo)
 
-Hotkey(HotkeyBST, (*) => RunMacro(DropBST, "Hotkey"))
-Hotkey(HotkeyReload, (*) => RunMacro(ReloadAllWeapons, "Hotkey"))
-Hotkey(HotkeySpamRespawn, (*) => RunMacro(SpamRespawn, "Hotkey"))
+Updater_Button := MyGui.AddButton("x+6", "Check For Updates")
+Updater_Button.OnEvent("Click", (*) => Updater("MANUAL_CHECK"))
+
+Hotkey(HotkeyBST, (*) => RunMacro(DropBST, "Hotkey"), "Off")
+Hotkey(HotkeyReload, (*) => RunMacro(ReloadAllWeapons, "Hotkey"), "Off")
+Hotkey(HotkeySpamRespawn, (*) => RunMacro(SpamRespawn, "Hotkey"), "Off")
 
 MyGui.Show("w350 h430")
 
@@ -795,6 +882,9 @@ OnMessage(0x020A, On_WM_MOUSEWHEEL)
 
 A_TrayMenu.Insert("1&", "Hide", (*) => HideGui(MyGui))
 A_TrayMenu.Insert("2&")
+
+Updater("STARTUP_CHECK")
+
 SetTimer(() => UpdateTrayMenuShowHideOptionState(MyGui), 100)
 
 /*
