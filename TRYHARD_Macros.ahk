@@ -6,10 +6,13 @@
 DEBUG_ENABLED := false
 
 SCRIPT_TITLE := "TRYHARD Macros"
-UPDATER_SCRIPT_TITLE := "Updater - " . SCRIPT_TITLE
-SCRIPT_VERSION := "v1.1.0 - 26/09/2024 (21:28)"
-SCRIPT_UPDATER_API_URL := "https://api.github.com/repos/Illegal-Services/TRYHARD_GTA_Macros/releases/latest"
+SCRIPT_VERSION := "v1.1.1 - 27/09/2024 (17:29)"
+SCRIPT_REPOSITORY := "https://github.com/Illegal-Services/TRYHARD_GTA_Macros"
+SCRIPT_LATEST_RELEASE_URL := SCRIPT_REPOSITORY . "/releases/latest"
+SCRIPT_VERSION_UPDATER_URL := "https://raw.githubusercontent.com/Illegal-Services/TRYHARD_GTA_Macros/refs/heads/main/VERSION.txt"
 SCRIPT_WINDOW_IDENTIFIER := SCRIPT_TITLE . " ahk_class " . "AutoHotkeyGUI" . " ahk_pid " . WinGetPID(A_ScriptHwnd)
+UPDATER_SCRIPT_TITLE := "Updater - " . SCRIPT_TITLE
+UPDATER_FETCHING_ERROR := "Error: Failed fetching release info."
 GTA_WINDOW_IDENTIFIER := "Grand Theft Auto V ahk_class grcWindow ahk_exe GTA5.exe"
 USER_INPUT__CURRENTLY_PLAYING_MACRO__STOPPING_KEYS := ["LButton", "RButton", "Enter", "Escape", "Backspace"]
 MSGBOX_SYSTEM_MODAL := 4096
@@ -34,6 +37,62 @@ CurrentDefaultButton := false
 KeyHold := KEY_DELAY_DEFAULT
 KeyDelay := KEY_DELAY_DEFAULT
 IsMacroRunning := false
+
+
+class Version {
+    __New(ScriptVersion) {
+        this.ParseVersion(ScriptVersion)
+    }
+
+    ParseVersion(ScriptVersion) {
+        static RE_SCRIPT__VERSION_DATE_TIME := "^(v(\d+)\.(\d+)\.(\d+)) - (((\d{2})\/(\d{2})\/(\d{4})) \(((\d{2}):(\d{2}))\))$"
+
+        if not RegExMatch(ScriptVersion, RE_SCRIPT__VERSION_DATE_TIME, &matches) {
+            throw Error("Invalid 'SCRIPT_VERSION' format.")
+        }
+
+        this.FullMatch := matches[0]
+        this.Version := matches[1]
+        this.MajorVersion := matches[2]
+        this.MinorVersion := matches[3]
+        this.PatchVersion := matches[4]
+        this.DateTime := matches[5]
+        this.Date := matches[6]
+        this.Day := matches[7]
+        this.Month := matches[8]
+        this.Year := matches[9]
+        this.Time := matches[10]
+        this.Hour := matches[11]
+        this.Minute := matches[12]
+
+        this.AhkTime := this.Year . this.Month . this.Day . this.Hour . this.Minute
+    }
+}
+
+class Updater {
+    __New(CurrentVersion) {
+        this.CurrentVersion := CurrentVersion
+    }
+
+    CheckForUpdate(LatestVersion) {
+        ; Step 1: Compare major, minor, and patch versions
+        if (LatestVersion.MajorVersion > this.CurrentVersion.MajorVersion)
+            return True
+        else if (LatestVersion.MajorVersion == this.CurrentVersion.MajorVersion) {
+            if (LatestVersion.MinorVersion > this.CurrentVersion.MinorVersion)
+                return True
+            else if (LatestVersion.MinorVersion == this.CurrentVersion.MinorVersion) {
+                if (LatestVersion.PatchVersion > this.CurrentVersion.PatchVersion)
+                    return True
+                else if (LatestVersion.PatchVersion == this.CurrentVersion.PatchVersion) {
+                    ; Step 2: Compare date and time if versioning is equal
+                    return DateDiff(LatestVersion.AhkTime, this.CurrentVersion.AhkTime, "Seconds") > 0
+                }
+            }
+        }
+        return False
+    }
+}
 
 
 SetTitleMatchMode(3) ; Exact match mode
@@ -237,79 +296,61 @@ UpdateMacroSpeed(GuiCtrlObj, Info) {
 }
 
 OpenRepo(*) {
-    Run("https://github.com/Illegal-Services/TRYHARD_GTA_Macros")
+    Run(SCRIPT_REPOSITORY)
 }
 
-Updater(Source) {
-    FormatTimestampToAHK(Timestamp, TimestampSource) {
-        if TimestampSource == "SCRIPT_VERSION" {
-            if RegExMatch(Timestamp, "(\d{2})/(\d{2})/(\d{4}) \((\d{2}):(\d{2})\)", &matches) {
-                return matches[3] . matches[2] . matches[1] . matches[4] . matches[5] ; . "00"
-            }
-        } else if TimestampSource == "GitHub" {
-            if RegExMatch(Timestamp, "(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})Z", &matches) {
-                return matches[1] . matches[2] . matches[3] . matches[4] . matches[5] . matches[6]
-            }
-        }
-
-        throw Error("Invalid timestamp format.")
-    }
-
+RunUpdater(Source) {
     GetLatestReleaseInfo() {
         try {
-            Response := WebRequest("GET", SCRIPT_UPDATER_API_URL)
+            Response := WebRequest("GET", SCRIPT_VERSION_UPDATER_URL)
 
             if Response.Status == 200 {
-                DownloadUrl := RegExMatch(Response.Text, '"html_url"\s*:\s*"(https:\/\/github\.com\/Illegal-Services\/TRYHARD_GTA_Macros\/releases\/tag\/[^"]+)', &urlMatch) ? urlMatch[1] : ""
-                LatestVersion := RegExMatch(Response.Text, '"tag_name"\s*:\s*"([^"]+)"', &VersionMatch) ? VersionMatch[1] : ""
-                ReleaseDate := RegExMatch(Response.Text, '"published_at"\s*:\s*"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)"', &DateMatch) ? FormatTimestampToAHK(DateMatch[1], "GitHub") : ""
-
-                return { LatestVersion: LatestVersion, ReleaseDate: ReleaseDate, DownloadUrl: DownloadUrl }
+                return Version(Response.Text)
             }
         }
 
-        throw Error("Error: Failed fetching release info.")
+        throw Error(UPDATER_FETCHING_ERROR)
     }
 
-
-    AHKscriptVersion := FormatTimestampToAHK(SCRIPT_VERSION, "SCRIPT_VERSION")
+    static CurrentVersion := Version(SCRIPT_VERSION)
 
     try {
-        LatestRelease := GetLatestReleaseInfo()
+        LatestVersion := GetLatestReleaseInfo()
     } catch error as err {
-        if (err.Message == "Error: Failed fetching release info.") {
+        if (err.Message == UPDATER_FETCHING_ERROR) {
             MsgBox(
-                "Error: Failed fetching release info.",
+                UPDATER_FETCHING_ERROR,
                 UPDATER_SCRIPT_TITLE,
                 "OK Icon! " . MSGBOX_SYSTEM_MODAL
             )
-        } else {
-            throw err
+            return
+        }
+        throw err
+    }
+
+    if Updater(CurrentVersion).CheckForUpdate(LatestVersion) {
+        MsgBox_Text := "New version found. Do you want to update ?`n`n"
+        MsgBox_Text .= "Current Version: " . SCRIPT_VERSION . "`n"
+        MsgBox_Text .= "Latest Version: " . LatestVersion.Version . " - " . LatestVersion.DateTime
+        MsgBox_Result := MsgBox(
+            MsgBox_Text,
+            UPDATER_SCRIPT_TITLE,
+            "YesNo Iconi " . MSGBOX_SYSTEM_MODAL
+        )
+        if MsgBox_Result == "Yes" {
+            Run(SCRIPT_LATEST_RELEASE_URL)
+            ExitApp
         }
     } else {
-        if DateDiff(LatestRelease.releaseDate, AHKscriptVersion, "Seconds") > 0 {
-            MsgBox_Text := "New version found. Do you want to update ?`n`n"
+        if Source == "MANUAL_CHECK" {
+            MsgBox_Text := "You are up-to-date :)`n`n"
             MsgBox_Text .= "Current Version: " . SCRIPT_VERSION . "`n"
-            MsgBox_Text .= "Latest Version: " . LatestRelease.LatestVersion . " - " . FormatTime(LatestRelease.ReleaseDate, "dd/MM/yyyy (HH:mm)")
-            MsgBox_Result := MsgBox(
+            MsgBox_Text .= "Latest Version: " . LatestVersion.Version . " - " . LatestVersion.DateTime
+            MsgBox(
                 MsgBox_Text,
                 UPDATER_SCRIPT_TITLE,
-                "YesNo Iconi " . MSGBOX_SYSTEM_MODAL
+                "Ok Iconi " . MSGBOX_SYSTEM_MODAL
             )
-            if MsgBox_Result == "Yes" {
-                Run(LatestRelease.DownloadUrl)
-            }
-        } else {
-            if Source == "MANUAL_CHECK" {
-                MsgBox_Text := "You are up-to-date :)`n`n"
-                MsgBox_Text .= "Current Version: " . SCRIPT_VERSION . "`n"
-                MsgBox_Text .= "Latest Version: " . LatestRelease.LatestVersion . " - " . FormatTime(LatestRelease.ReleaseDate, "dd/MM/yyyy (HH:mm)") . "`n"
-                MsgBox(
-                    MsgBox_Text,
-                    UPDATER_SCRIPT_TITLE,
-                    "Ok Iconi " . MSGBOX_SYSTEM_MODAL
-                )
-            }
         }
     }
 }
@@ -406,7 +447,7 @@ ProcessGTAKeystrokes(triggerSource, Keystrokes) {
         loop Keystroke.count {
             if not IsValidGTAwinRunning({ hwnd: gtaWindowID, AndActive: true }) {
                 MsgBox(
-                    'ERROR: GTA V window is no longer active, aborting process.',
+                    "ERROR: GTA V window is no longer active, aborting process.",
                     SCRIPT_TITLE,
                     "OK Icon! " . MSGBOX_SYSTEM_MODAL
                 )
@@ -858,7 +899,7 @@ Help_Button := MyGui.AddButton("x+70", "Open GitHub Repository")
 Help_Button.OnEvent("Click", OpenRepo)
 
 Updater_Button := MyGui.AddButton("x+6", "Check For Updates")
-Updater_Button.OnEvent("Click", (*) => Updater("MANUAL_CHECK"))
+Updater_Button.OnEvent("Click", (*) => RunUpdater("MANUAL_CHECK"))
 
 Hotkey(HotkeyBST, (*) => RunMacro(DropBST, "Hotkey"), "Off")
 Hotkey(HotkeyReload, (*) => RunMacro(ReloadAllWeapons, "Hotkey"), "Off")
@@ -883,7 +924,7 @@ OnMessage(0x020A, On_WM_MOUSEWHEEL)
 A_TrayMenu.Insert("1&", "Hide", (*) => HideGui(MyGui))
 A_TrayMenu.Insert("2&")
 
-Updater("STARTUP_CHECK")
+RunUpdater("STARTUP_CHECK")
 
 SetTimer(() => UpdateTrayMenuShowHideOptionState(MyGui), 100)
 
