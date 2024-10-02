@@ -309,7 +309,7 @@ UpdateMacroSpeed(GuiCtrlObj, Info) {
 }
 
 OpenSettings(*) {
-    MySettingsGui.Show("w350 h450")
+    MySettingsGui.Show("w350 h494")
 }
 
 OpenRepo(*) {
@@ -538,20 +538,29 @@ ReloadAllWeapons(triggerSource) {
         { key: "Enter", count: 2, delay: KeyDelay * 2 } ; in [Health and Ammo] and [Ammo]
     )
 
-    NumOfWeaponTypesToIterate := EditReloadAllWeapons
-    ; Iterate through each [Ammo Type] and select the [Full Ammo $x] option for each
-    Loop NumOfWeaponTypesToIterate {
+    if ReloadAllWeapons_Heavy_Weapon__Radio.Value {
         Reload_Keystrokes.Push(
+            { key: "Enter", delay: KeyDelay * 2 }, ; hover [Ammo Type < All >]
             { key: "Up" }, ; hover [Full Ammo $x]
             { key: "Enter", delay: KeyDelay * 2 } ; select [Full Ammo $x]
         )
+    } else {
+        NumOfWeaponTypesToIterate := EditReloadAllWeapons
 
-        ; Only add "Down" and "Left" if it's not the last iteration
-        if (A_Index < NumOfWeaponTypesToIterate) {
+        ; Iterate through each [Ammo Type] and select the [Full Ammo $x] option for each
+        Loop NumOfWeaponTypesToIterate {
             Reload_Keystrokes.Push(
-                { key: "Down" }, ; hover [Ammo Type < x >]
-                { key: "Left" } ; hover [Ammo Type < y >]
+                { key: "Up" }, ; hover [Full Ammo $x]
+                { key: "Enter", delay: KeyDelay * 2 } ; select [Full Ammo $x]
             )
+
+            ; Only add "Down" and "Left" if it's not the last iteration
+            if (A_Index < NumOfWeaponTypesToIterate) {
+                Reload_Keystrokes.Push(
+                    { key: "Down" }, ; hover [Ammo Type < x >]
+                    { key: "Left" } ; hover [Ammo Type < y >]
+                )
+            }
         }
     }
 
@@ -953,13 +962,15 @@ MySettingsGui := Gui()
 MySettingsGui.Opt("+AlwaysOnTop")
 MySettingsGui.Title := SETTINGS_SCRIPT_TITLE
 
-ReloadAllWeapons_Text := MySettingsGui.AddText(, 'Number of iterations for "Reload All Weapons" :')
+ReloadAllWeapons_Iterate_All__Radio := MySettingsGui.AddRadio("Checked", " Reload All Weapons (Method: Iterate All)")
+ReloadAllWeapons_Heavy_Weapon__Radio := MySettingsGui.AddRadio(, " Reload All Weapons (Method: Heavy Weapon)")
+ReloadAllWeapons_Text := MySettingsGui.AddText("y50", 'Number of iterations for "Reload All Weapons" (Method: Iterate All) :')
 ReloadAllWeapons_Edit := MySettingsGui.AddEdit("w40")
 ReloadAllWeapons_Edit.OnEvent("Change", ReloadAllWeapons_Edit_Change__Callback)
 ReloadAllWeapons_Edit.OnEvent("LoseFocus", ReloadAllWeapons_Edit_LoseFocus__Callback)
 ReloadAllWeapons_UpDown := MySettingsGui.AddUpDown("Range1-10", DEFAULT_EDIT_RELOAD_All_WEAPONS)
 
-AddSeparator(MySettingsGui)
+AddSeparator(MySettingsGui, {text1: "x10"})
 
 ApplyKeyBinding(KeyBindingToApply) {
     KeyBind := KeyBinding_Interaction_Menu__HotkeyEdit.Value
@@ -983,7 +994,7 @@ ResetKeyBinding(KeyBindingToReset) {
     KeyBindings_Map[KeyBindingToReset] := DEFAULT_KEY_BINDING__INTERACTION_MENU
 }
 
-MySettingsGui.AddText(, 'In-Game key binding for "Interaction Menu" :')
+MySettingsGui.AddText(, 'In-game key binding for "Interaction Menu" :')
 KeyBinding_Interaction_Menu__HotkeyEdit := MySettingsGui.AddEdit("w100 Limit17", KeyBindings_Map["Interaction_Menu"])
 KeyBinding_Interaction_Menu__HotkeyEdit.OnEvent("Focus", (*) => OnEdit_Focus(KeyBinding_Interaction_Menu__ApplyButton))
 KeyBinding_Interaction_Menu__HotkeyEdit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(KeyBinding_Interaction_Menu__HotkeyEdit, KeyBinding_Interaction_Menu__ApplyButton, KeyBindings_Map["Interaction_Menu"]))

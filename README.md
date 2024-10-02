@@ -46,7 +46,6 @@ GTA Macros for TRYHARD players using AutoHotkey v2.
 
 # TODO
 
-- Add the alternative way of "Reload All Weapons" by holding a specific weapon type, press Enter and THEN reloading.
 - Load/Save `Settings.ini` file
 - Add each of the following macros:
   - Anti-Kick
