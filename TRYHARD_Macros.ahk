@@ -518,7 +518,7 @@ ProcessGTAKeystrokes(triggerSource, Keystrokes) {
 
 DropBST(triggerSource) {
     BST_Keystrokes := [
-        { key: KeyBindings_Map["Interaction_Menu"], delay: KeyDelay * 6 }, ; in [Interaction Menu]
+        { key: KeyBindings_Map["Interaction_Menu"], delay: KeyDelay * 4 }, ; in [Interaction Menu]
         { key: "Enter", delay: KeyDelay * 2 }, ; in [SecuroServ CEO]
         { key: "Down", count: 4 }, ; hover [CEO Abilities]
         { key: "Enter", delay: KeyDelay * 2 }, ; in [CEO Abilities]
@@ -533,7 +533,7 @@ ReloadAllWeapons(triggerSource) {
     Reload_Keystrokes := []
 
     Reload_Keystrokes.Push(
-        { key: KeyBindings_Map["Interaction_Menu"], delay: KeyDelay * 6 }, ; in [Interaction Menu]
+        { key: KeyBindings_Map["Interaction_Menu"], delay: KeyDelay * 4 }, ; in [Interaction Menu]
         { key: "Down", count: 4 }, ; hover [Health and Ammo]
         { key: "Enter", count: 2, delay: KeyDelay * 2 } ; in [Health and Ammo] and [Ammo]
     )
