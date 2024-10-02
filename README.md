@@ -42,7 +42,8 @@ GTA Macros for TRYHARD players using AutoHotkey v2.
 # TODO
 
 - Add each of the following macros:
-  - Add a Setting for "Interaction Menu" key for people who changed it and make sure it's `M` by default (Qwerty).
+  - Launching a macro with Caps Lock ON causes it to flash and reduces macro speed due to additional input.
+  - Add a setting for the "Interaction Menu" key for users who have changed it, ensuring it defaults to `M` for QWERTY layouts.
   - Load/Save `Settings.ini` file
   - Anti-Kick
   - Toggle Thermal Vision
