@@ -6,7 +6,7 @@
 DEBUG_ENABLED := false
 
 SCRIPT_TITLE := "TRYHARD Macros"
-SCRIPT_VERSION := "v1.2.2 - 02/10/2024 (02:43)"
+SCRIPT_VERSION := "v1.2.3 - 02/10/2024 (19:41)"
 SCRIPT_REPOSITORY := "https://github.com/BUZZARDGTA/TRYHARD_GTA_Macros"
 SCRIPT_LATEST_RELEASE_URL := SCRIPT_REPOSITORY . "/releases/latest"
 SCRIPT_VERSION_UPDATER_URL := "https://raw.githubusercontent.com/BUZZARDGTA/TRYHARD_GTA_Macros/refs/heads/main/VERSION.txt"
@@ -19,6 +19,8 @@ USER_INPUT__CURRENTLY_PLAYING_MACRO__STOPPING_KEYS := ["LButton", "RButton", "En
 MSGBOX_SYSTEM_MODAL := 4096
 CENTER_ADJUSTMENT_PIXELS := 7
 DEFAULT_EDIT_RELOAD_All_WEAPONS := 8
+
+DEFAULT_KEY_BINDING__INTERACTION_MENU := "M"
 
 DEFAULT_HOTKEY_BST := "F1"
 DEFAULT_HOTKEY_RELOAD := "F2"
@@ -46,6 +48,9 @@ KeyDelay := KEY_DELAY_DEFAULT
 IsMacroRunning := false
 gtaWindowID := 0
 EditReloadAllWeapons := DEFAULT_EDIT_RELOAD_All_WEAPONS
+KeyBindings_Map := Map(
+    "Interaction_Menu", DEFAULT_KEY_BINDING__INTERACTION_MENU
+)
 
 
 class Version {
@@ -304,7 +309,7 @@ UpdateMacroSpeed(GuiCtrlObj, Info) {
 }
 
 OpenSettings(*) {
-    MySettingsGui.Show("w350 h364")
+    MySettingsGui.Show("w350 h450")
 }
 
 OpenRepo(*) {
@@ -513,7 +518,7 @@ ProcessGTAKeystrokes(triggerSource, Keystrokes) {
 
 DropBST(triggerSource) {
     BST_Keystrokes := [
-        { key: ",", delay: KeyDelay * 6 }, ; in [Interaction Menu]
+        { key: KeyBindings_Map["Interaction_Menu"], delay: KeyDelay * 6 }, ; in [Interaction Menu]
         { key: "Enter", delay: KeyDelay * 2 }, ; in [SecuroServ CEO]
         { key: "Down", count: 4 }, ; hover [CEO Abilities]
         { key: "Enter", delay: KeyDelay * 2 }, ; in [CEO Abilities]
@@ -528,7 +533,7 @@ ReloadAllWeapons(triggerSource) {
     Reload_Keystrokes := []
 
     Reload_Keystrokes.Push(
-        { key: ",", delay: KeyDelay * 6 }, ; in [Interaction Menu]
+        { key: KeyBindings_Map["Interaction_Menu"], delay: KeyDelay * 6 }, ; in [Interaction Menu]
         { key: "Down", count: 4 }, ; hover [Health and Ammo]
         { key: "Enter", count: 2, delay: KeyDelay * 2 } ; in [Health and Ammo] and [Ammo]
     )
@@ -550,7 +555,7 @@ ReloadAllWeapons(triggerSource) {
         }
     }
 
-    Reload_Keystrokes.Push({ key: "," }) ; exit [Interaction Menu]
+    Reload_Keystrokes.Push({ key: KeyBindings_Map["Interaction_Menu"] }) ; exit [Interaction Menu]
 
     return ProcessGTAKeystrokes(triggerSource, Reload_Keystrokes)
 }
@@ -798,7 +803,10 @@ OnEdit_Focus(ApplyButton) {
     ApplyButton.Opt("+Default")
 }
 
-OnEdit_LoseFocus(ApplyButton) {
+OnEdit_LoseFocus(EditField, ApplyButton, FallbackValue) {
+    if not ApplyButton.Focused {
+        EditField.Value := FallbackValue
+    }
     ApplyButton.Opt("-Default")
 }
 
@@ -953,10 +961,43 @@ ReloadAllWeapons_UpDown := MySettingsGui.AddUpDown("Range1-10", DEFAULT_EDIT_REL
 
 AddSeparator(MySettingsGui)
 
+ApplyKeyBinding(KeyBindingToApply) {
+    KeyBind := KeyBinding_Interaction_Menu__HotkeyEdit.Value
+
+    if GetKeySC(KeyBind) {
+        KeyBindings_Map[KeyBindingToApply] := KeyBind
+        return true
+    }
+
+    MsgBox(
+        "Error: Invalid key name.",
+        SCRIPT_TITLE,
+        "OK Icon! " . MSGBOX_SYSTEM_MODAL
+    )
+    KeyBinding_Interaction_Menu__HotkeyEdit.Value := KeyBindings_Map[KeyBindingToApply]
+    return false
+}
+
+ResetKeyBinding(KeyBindingToReset) {
+    KeyBinding_Interaction_Menu__HotkeyEdit.Value := DEFAULT_KEY_BINDING__INTERACTION_MENU
+    KeyBindings_Map[KeyBindingToReset] := DEFAULT_KEY_BINDING__INTERACTION_MENU
+}
+
+MySettingsGui.AddText(, 'In-Game key binding for "Interaction Menu" :')
+KeyBinding_Interaction_Menu__HotkeyEdit := MySettingsGui.AddEdit("w100 Limit17", KeyBindings_Map["Interaction_Menu"])
+KeyBinding_Interaction_Menu__HotkeyEdit.OnEvent("Focus", (*) => OnEdit_Focus(KeyBinding_Interaction_Menu__ApplyButton))
+KeyBinding_Interaction_Menu__HotkeyEdit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(KeyBinding_Interaction_Menu__HotkeyEdit, KeyBinding_Interaction_Menu__ApplyButton, KeyBindings_Map["Interaction_Menu"]))
+KeyBinding_Interaction_Menu__ApplyButton := MySettingsGui.AddButton("w66 x+10", "Apply")
+KeyBinding_Interaction_Menu__ApplyButton.OnEvent("Click", (*) => ApplyKeyBinding("Interaction_Menu"))
+KeyBinding_Interaction_Menu__ResetButton := MySettingsGui.AddButton("w66 x+10", "Reset")
+KeyBinding_Interaction_Menu__ResetButton.OnEvent("Click", (*) => ResetKeyBinding("Interaction_Menu"))
+
+AddSeparator(MySettingsGui, {text1: "x10"})
+
 MySettingsGui.AddText(, 'Hotkey for "Drop BST" :')
 HotkeyBST_HotkeyEdit := MySettingsGui.AddEdit("w100 Limit17", DEFAULT_HOTKEY_BST)
 HotkeyBST_HotkeyEdit.OnEvent("Focus", (*) => OnEdit_Focus(HotkeyBST_ApplyButton))
-HotkeyBST_HotkeyEdit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(HotkeyBST_ApplyButton))
+HotkeyBST_HotkeyEdit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(HotkeyBST_HotkeyEdit, HotkeyBST_ApplyButton, Hotkeys_Map["HotkeyBST"]))
 HotkeyBST_ApplyButton := MySettingsGui.AddButton("w66 x+10", "Apply")
 HotkeyBST_ApplyButton.OnEvent("Click", (*) => ApplyHotkey("HotkeyBST"))
 HotkeyBST_ResetButton := MySettingsGui.AddButton("w66 x+10", "Reset")
@@ -966,7 +1007,7 @@ HotkeyBST_ToggleButton.OnEvent("Click", (*) => ToggleHotkey("HotkeyBST"))
 MySettingsGui.AddText("x10", 'Hotkey for "Reload All Weapons" :')
 HotkeyReload_HotkeyEdit := MySettingsGui.AddEdit("w100 Limit17", DEFAULT_HOTKEY_RELOAD)
 HotkeyReload_HotkeyEdit.OnEvent("Focus", (*) => OnEdit_Focus(HotkeyReload_ApplyButton))
-HotkeyReload_HotkeyEdit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(HotkeyReload_ApplyButton))
+HotkeyReload_HotkeyEdit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(HotkeyReload_HotkeyEdit, HotkeyReload_ApplyButton, Hotkeys_Map["HotkeyReload"]))
 HotkeyReload_ApplyButton := MySettingsGui.AddButton("w66 x+10", "Apply")
 HotkeyReload_ApplyButton.OnEvent("Click", (*) => ApplyHotkey("HotkeyReload"))
 HotkeyReload_ResetButton := MySettingsGui.AddButton("w66 x+10", "Reset")
@@ -976,7 +1017,7 @@ HotkeyReload_ToggleButton.OnEvent("Click", (*) => ToggleHotkey("HotkeyReload"))
 MySettingsGui.AddText("x10", 'Hotkey for "Spam Respawn" :')
 HotkeySpamRespawn_HotkeyEdit := MySettingsGui.AddEdit("w100 Limit17", DEFAULT_HOTKEY_SPAMRESPAWN)
 HotkeySpamRespawn_HotkeyEdit.OnEvent("Focus", (*) => OnEdit_Focus(HotkeySpamRespawn_ApplyButton))
-HotkeySpamRespawn_HotkeyEdit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(HotkeySpamRespawn_ApplyButton))
+HotkeySpamRespawn_HotkeyEdit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(HotkeySpamRespawn_HotkeyEdit, HotkeySpamRespawn_ApplyButton, Hotkeys_Map["HotkeySpamRespawn"]))
 HotkeySpamRespawn_ApplyButton := MySettingsGui.AddButton("w66 x+10", "Apply")
 HotkeySpamRespawn_ApplyButton.OnEvent("Click", (*) => ApplyHotkey("HotkeySpamRespawn"))
 HotkeySpamRespawn_ResetButton := MySettingsGui.AddButton("w66 x+10", "Reset")
@@ -986,7 +1027,7 @@ HotkeySpamRespawn_ToggleButton.OnEvent("Click", (*) => ToggleHotkey("HotkeySpamR
 MySettingsGui.AddText("x10", 'Hotkey for "Terminate Game" :')
 HotkeyTerminateGame_HotkeyEdit := MySettingsGui.AddEdit("w100 Limit17", DEFAULT_HOTKEY_TERMINATEGAME)
 HotkeyTerminateGame_HotkeyEdit.OnEvent("Focus", (*) => OnEdit_Focus(HotkeyTerminateGame_ApplyButton))
-HotkeyTerminateGame_HotkeyEdit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(HotkeyTerminateGame_ApplyButton))
+HotkeyTerminateGame_HotkeyEdit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(HotkeyTerminateGame_HotkeyEdit, HotkeyTerminateGame_ApplyButton, Hotkeys_Map["HotkeyTerminateGame"]))
 HotkeyTerminateGame_HotkeyEdit.Enabled := false
 HotkeyTerminateGame_ApplyButton := MySettingsGui.AddButton("w66 x+10", "Apply")
 HotkeyTerminateGame_ApplyButton.OnEvent("Click", (*) => ApplyHotkey("HotkeyTerminateGame"))
@@ -999,7 +1040,7 @@ HotkeyTerminateGame_ToggleButton.OnEvent("Click", (*) => ToggleHotkey("HotkeyTer
 MySettingsGui.AddText("x10", 'Hotkey for "Suspend Game" :')
 HotkeySuspendGame_HotkeyEdit := MySettingsGui.AddEdit("w100 Limit17", DEFAULT_HOTKEY_SUSPENDGAME)
 HotkeySuspendGame_HotkeyEdit.OnEvent("Focus", (*) => OnEdit_Focus(HotkeySpamRespawn_ApplyButton))
-HotkeySuspendGame_HotkeyEdit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(HotkeySpamRespawn_ApplyButton))
+HotkeySuspendGame_HotkeyEdit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(HotkeySuspendGame_HotkeyEdit, HotkeySpamRespawn_ApplyButton, Hotkeys_Map["HotkeySuspendGame"]))
 HotkeySuspendGame_HotkeyEdit.Enabled := false
 HotkeySuspendGame_ApplyButton := MySettingsGui.AddButton("w66 x+10", "Apply")
 HotkeySuspendGame_ApplyButton.OnEvent("Click", (*) => ApplyHotkey("HotkeySuspendGame"))
