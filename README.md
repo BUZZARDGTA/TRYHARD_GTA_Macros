@@ -51,3 +51,6 @@ GTA Macros for TRYHARD players using AutoHotkey v2.
   - Spam Rocket
   - Spam Sniper
   - Spam Pistol
+
+  # Credits
+  [.Gangsta](https://socialclub.rockstargames.com/member/.Gangsta/) - Assisted me with testing and provided new ideas.
