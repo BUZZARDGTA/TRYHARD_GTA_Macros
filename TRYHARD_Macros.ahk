@@ -354,7 +354,7 @@ RunUpdater(Source) {
             ExitApp
         }
     } else {
-        if Source == "MANUAL_CHECK" {
+        if Source == "MANUAL" {
             MsgBox_Text := "You are up-to-date :)`n`n"
             MsgBox_Text .= "Current Version: " . SCRIPT_VERSION . "`n"
             MsgBox_Text .= "Latest Version: " . LatestVersion.Version . " - " . LatestVersion.DateTime
@@ -775,6 +775,9 @@ ToggleHotkey(HotkeyToToggle) {
         } else {
             HotkeyObjects_Map.ToggleButton.Text := "Disable"
         }
+        HotkeyObjects_Map.HotkeyEdit.Enabled := true
+        HotkeyObjects_Map.ApplyButton.Enabled := true
+        HotkeyObjects_Map.ResetButton.Enabled := true
     } else if (HotkeyObjects_Map.ToggleButton.Text == "Disable") {
         try {
             Hotkey(HotkeyObjects_Map.Hotkey, "Off")
@@ -785,6 +788,9 @@ ToggleHotkey(HotkeyToToggle) {
         } else {
             HotkeyObjects_Map.ToggleButton.Text := "Enable"
         }
+        HotkeyObjects_Map.HotkeyEdit.Enabled := false
+        HotkeyObjects_Map.ApplyButton.Enabled := false
+        HotkeyObjects_Map.ResetButton.Enabled := false
     }
 }
 
@@ -931,7 +937,7 @@ OpenRepo_Button := MyGui.AddButton("Disabled x+0", "Open Repository")
 OpenRepo_Button.OnEvent("Click", OpenRepo)
 
 Updater_Button := MyGui.AddButton("Disabled x+0", "Check For Updates")
-Updater_Button.OnEvent("Click", (*) => RunUpdater("MANUAL_CHECK"))
+Updater_Button.OnEvent("Click", (*) => RunUpdater("MANUAL"))
 ; END Main GUI
 
 ; START Settings GUI
@@ -981,20 +987,26 @@ MySettingsGui.AddText("x10", 'Hotkey for "Terminate Game" :')
 HotkeyTerminateGame_HotkeyEdit := MySettingsGui.AddEdit("w100 Limit17", DEFAULT_HOTKEY_TERMINATEGAME)
 HotkeyTerminateGame_HotkeyEdit.OnEvent("Focus", (*) => OnEdit_Focus(HotkeyTerminateGame_ApplyButton))
 HotkeyTerminateGame_HotkeyEdit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(HotkeyTerminateGame_ApplyButton))
+HotkeyTerminateGame_HotkeyEdit.Enabled := false
 HotkeyTerminateGame_ApplyButton := MySettingsGui.AddButton("w66 x+10", "Apply")
 HotkeyTerminateGame_ApplyButton.OnEvent("Click", (*) => ApplyHotkey("HotkeyTerminateGame"))
+HotkeyTerminateGame_ApplyButton.Enabled := false
 HotkeyTerminateGame_ResetButton := MySettingsGui.AddButton("w66 x+10", "Reset")
 HotkeyTerminateGame_ResetButton.OnEvent("Click", (*) => ResetHotkey("HotkeyTerminateGame"))
+HotkeyTerminateGame_ResetButton.Enabled := false
 HotkeyTerminateGame_ToggleButton := MySettingsGui.AddButton("w66 x+10", "Enable")
 HotkeyTerminateGame_ToggleButton.OnEvent("Click", (*) => ToggleHotkey("HotkeyTerminateGame"))
 MySettingsGui.AddText("x10", 'Hotkey for "Suspend Game" :')
 HotkeySuspendGame_HotkeyEdit := MySettingsGui.AddEdit("w100 Limit17", DEFAULT_HOTKEY_SUSPENDGAME)
 HotkeySuspendGame_HotkeyEdit.OnEvent("Focus", (*) => OnEdit_Focus(HotkeySpamRespawn_ApplyButton))
 HotkeySuspendGame_HotkeyEdit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(HotkeySpamRespawn_ApplyButton))
+HotkeySuspendGame_HotkeyEdit.Enabled := false
 HotkeySuspendGame_ApplyButton := MySettingsGui.AddButton("w66 x+10", "Apply")
 HotkeySuspendGame_ApplyButton.OnEvent("Click", (*) => ApplyHotkey("HotkeySuspendGame"))
+HotkeySuspendGame_ApplyButton.Enabled := false
 HotkeySuspendGame_ResetButton := MySettingsGui.AddButton("w66 x+10", "Reset")
 HotkeySuspendGame_ResetButton.OnEvent("Click", (*) => ResetHotkey("HotkeySuspendGame"))
+HotkeySuspendGame_ResetButton.Enabled := false
 HotkeySuspendGame_ToggleButton := MySettingsGui.AddButton("w66 x+10", "Enable")
 HotkeySuspendGame_ToggleButton.OnEvent("Click", (*) => ToggleHotkey("HotkeySuspendGame"))
 
@@ -1034,7 +1046,7 @@ OnMessage(0x020A, On_WM_MOUSEWHEEL)
 A_TrayMenu.Insert("1&", "Hide", (*) => HideGui(MyGui))
 A_TrayMenu.Insert("2&")
 
-RunUpdater("STARTUP_CHECK")
+RunUpdater("STARTUP")
 
 SetTimer(() => UpdateTrayMenuShowHideOptionState(MyGui), 100)
 
