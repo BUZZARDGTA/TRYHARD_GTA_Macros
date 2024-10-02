@@ -42,6 +42,8 @@ GTA Macros for TRYHARD players using AutoHotkey v2.
 # TODO
 
 - Add each of the following macros:
+  - Add a Setting for "Interaction Menu" key for people who changed it and make sure it's `M` by default (Qwerty).
+  - Load/Save `Settings.ini` file
   - Anti-Kick
   - Toggle Thermal Vision
   - Spam Clipboard
