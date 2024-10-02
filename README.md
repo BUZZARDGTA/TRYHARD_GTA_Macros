@@ -37,7 +37,6 @@ GTA Macros for TRYHARD players using AutoHotkey v2.
 
 # Known Bug (unlikely to be fixed)
 
-- Launching a macro with Caps Lock ON causes it to flash and reduces macro speed due to additional input.
 - The macro does not consistently stop when the following keys are <ins>**quickly**</ins> pressed: \["LButton", "RButton", "Enter", "Escape", "Backspace"\]. While this currently randomely works, the implementation is not optimized. I recommend holding any of these keys down for a full second for it to works every time.
 
 # TODO

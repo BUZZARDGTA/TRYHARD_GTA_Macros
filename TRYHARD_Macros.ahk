@@ -105,6 +105,7 @@ class Updater {
 
 
 SetTitleMatchMode(3) ; Exact match mode
+SetStoreCapsLockMode(false)
 
 On_WM_MOUSEMOVE(wParam, lParam, msg, Hwnd) {
     static PrevHwnd := 0
@@ -549,8 +550,7 @@ ReloadAllWeapons(triggerSource) {
         }
     }
 
-    ; exit [Interaction Menu]
-    Reload_Keystrokes.Push({ key: "," })
+    Reload_Keystrokes.Push({ key: "," }) ; exit [Interaction Menu]
 
     return ProcessGTAKeystrokes(triggerSource, Reload_Keystrokes)
 }
