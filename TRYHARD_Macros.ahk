@@ -6,7 +6,7 @@
 DEBUG_ENABLED := false
 
 SCRIPT_TITLE := "TRYHARD Macros"
-SCRIPT_VERSION := "v1.2.1 - 02/10/2024 (02:29)"
+SCRIPT_VERSION := "v1.2.2 - 02/10/2024 (02:43)"
 SCRIPT_REPOSITORY := "https://github.com/BUZZARDGTA/TRYHARD_GTA_Macros"
 SCRIPT_LATEST_RELEASE_URL := SCRIPT_REPOSITORY . "/releases/latest"
 SCRIPT_VERSION_UPDATER_URL := "https://raw.githubusercontent.com/BUZZARDGTA/TRYHARD_GTA_Macros/refs/heads/main/VERSION.txt"
@@ -908,10 +908,10 @@ DropBST_Button.OnEvent("Click", (*) => RunMacro(DropBST, "Button"))
 DropBST_Button.ToolTip := "*Ensure you are in a CEO Organization."
 ReloadAllWeapons_Button := MyGui.AddButton("Disabled x+10", "Reload All Weapons*")
 ReloadAllWeapons_Button.OnEvent("Click", (*) => RunMacro(ReloadAllWeapons, "Button"))
-ReloadAllWeapons_Button.ToolTip := '*If you are NOT using "FIX (slower)", before reloading, fire a single pistol round.'
+ReloadAllWeapons_Button.ToolTip := "*You can adjust the number of weapon type iterations in the Settings."
 SpamRespawn_Button := MyGui.AddButton("Disabled x+10", "Spam Respawn*")
 SpamRespawn_Button.OnEvent("Click", (*) => RunMacro(SpamRespawn, "Button"))
-SpamRespawn_Button.ToolTip := "*Use that when you're dead to spawn faster."
+SpamRespawn_Button.ToolTip := "*Use this on the death screen after being killed to speed up your respawn time."
 
 MyGui.AddText("x10")
 
