@@ -6,7 +6,7 @@
 DEBUG_ENABLED := false
 
 SCRIPT_TITLE := "TRYHARD Macros"
-SCRIPT_VERSION := "v1.2.0 - 02/10/2024 (02:21)"
+SCRIPT_VERSION := "v1.2.1 - 02/10/2024 (02:29)"
 SCRIPT_REPOSITORY := "https://github.com/BUZZARDGTA/TRYHARD_GTA_Macros"
 SCRIPT_LATEST_RELEASE_URL := SCRIPT_REPOSITORY . "/releases/latest"
 SCRIPT_VERSION_UPDATER_URL := "https://raw.githubusercontent.com/BUZZARDGTA/TRYHARD_GTA_Macros/refs/heads/main/VERSION.txt"
@@ -565,16 +565,17 @@ SpamRespawn(triggerSource) {
 
 TerminateGame(triggerSource) {
     SetRunMacroDependencies(false)
-
-    if not gtaWindowID {
+    TerminateGame_Button.Enabled := false
+    if gtaWindowID {
+        ProcessClose(WinGetPID(gtaWindowID))
+    } else {
         MsgBox(
             'ERROR: Unable to find a window titled "Grand Theft Auto V" using class "grcWindow" and with process name "GTA5.exe".`n`nPlease ensure GTA V is currently running.',
             SCRIPT_TITLE,
             "OK Icon! " . MSGBOX_SYSTEM_MODAL
         )
     }
-    ProcessClose(WinGetPID(gtaWindowID))
-
+    TerminateGame_Button.Enabled := true
     SetRunMacroDependencies(true)
 }
 
@@ -598,19 +599,20 @@ SuspendGame(triggerSource) {
 
 
     SetRunMacroDependencies(false)
-    if not gtaWindowID {
+    if gtaWindowID {
+        h := OpenProcess(WinGetPID(gtaWindowID))
+        if h {
+            SuspendProcess(h)
+            Sleep(8000)
+            ResumeProcess(h)
+            CloseProcess(h)
+        }
+    } else {
         MsgBox(
             'ERROR: Unable to find a window titled "Grand Theft Auto V" using class "grcWindow" and with process name "GTA5.exe".`n`nPlease ensure GTA V is currently running.',
             SCRIPT_TITLE,
             "OK Icon! " . MSGBOX_SYSTEM_MODAL
         )
-    }
-    h := OpenProcess(WinGetPID(gtaWindowID))
-    if h {
-        SuspendProcess(h)
-        Sleep(8000)
-        ResumeProcess(h)
-        CloseProcess(h)
     }
     SetRunMacroDependencies(true)
 }
