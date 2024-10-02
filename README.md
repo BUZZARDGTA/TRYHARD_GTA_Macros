@@ -29,11 +29,11 @@ GTA Macros for TRYHARD players using AutoHotkey v2.
 >
 > Your computer's specs or a generally slow session might be affecting the macro's consistency.
 
-# Screenshot
+# Screenshots
 
-<div align="center">
-  <img src="https://github.com/user-attachments/assets/eabf456e-6ade-42f2-b149-9acd86ac46ce" alt="TRYHARD Macros" style="width: 35%;">
-</div>
+| Main | Settings |
+| --------- | ---------- |
+| ![Main](https://github.com/user-attachments/assets/b456bb55-3eb7-4ba7-b705-cf9f59d2ea0a) | ![Settings](https://github.com/user-attachments/assets/332f415e-0727-4a34-906b-89f9aced53dc) |
 
 # Known Bug (unlikely to be fixed)
 
