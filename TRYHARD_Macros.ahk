@@ -6,21 +6,25 @@
 DEBUG_ENABLED := false
 
 SCRIPT_TITLE := "TRYHARD Macros"
-SCRIPT_VERSION := "v1.1.1 - 27/09/2024 (17:29)"
-SCRIPT_REPOSITORY := "https://github.com/Illegal-Services/TRYHARD_GTA_Macros"
+SCRIPT_VERSION := "v1.2.0 - 02/10/2024 (02:21)"
+SCRIPT_REPOSITORY := "https://github.com/BUZZARDGTA/TRYHARD_GTA_Macros"
 SCRIPT_LATEST_RELEASE_URL := SCRIPT_REPOSITORY . "/releases/latest"
-SCRIPT_VERSION_UPDATER_URL := "https://raw.githubusercontent.com/Illegal-Services/TRYHARD_GTA_Macros/refs/heads/main/VERSION.txt"
+SCRIPT_VERSION_UPDATER_URL := "https://raw.githubusercontent.com/BUZZARDGTA/TRYHARD_GTA_Macros/refs/heads/main/VERSION.txt"
 SCRIPT_WINDOW_IDENTIFIER := SCRIPT_TITLE . " ahk_class " . "AutoHotkeyGUI" . " ahk_pid " . WinGetPID(A_ScriptHwnd)
 UPDATER_SCRIPT_TITLE := "Updater - " . SCRIPT_TITLE
 UPDATER_FETCHING_ERROR := "Error: Failed fetching release info."
+SETTINGS_SCRIPT_TITLE := "Settings - " . SCRIPT_TITLE
 GTA_WINDOW_IDENTIFIER := "Grand Theft Auto V ahk_class grcWindow ahk_exe GTA5.exe"
 USER_INPUT__CURRENTLY_PLAYING_MACRO__STOPPING_KEYS := ["LButton", "RButton", "Enter", "Escape", "Backspace"]
 MSGBOX_SYSTEM_MODAL := 4096
 CENTER_ADJUSTMENT_PIXELS := 7
+DEFAULT_EDIT_RELOAD_All_WEAPONS := 8
 
 DEFAULT_HOTKEY_BST := "F1"
 DEFAULT_HOTKEY_RELOAD := "F2"
 DEFAULT_HOTKEY_SPAMRESPAWN := "F3"
+DEFAULT_HOTKEY_TERMINATEGAME := "F4"
+DEFAULT_HOTKEY_SUSPENDGAME := "F5"
 
 TOOLTIP_DISPLAY_TIME := 250
 TOOLTIP_HIDE_TIME := 5000
@@ -30,13 +34,18 @@ KEY_DELAY_FASTEST := 10
 KEY_DELAY_DEFAULT := 40
 
 ; Globals
-HotkeyBST := DEFAULT_HOTKEY_BST
-HotkeyReload := DEFAULT_HOTKEY_RELOAD
-HotkeySpamRespawn := DEFAULT_HOTKEY_SPAMRESPAWN
-CurrentDefaultButton := false
+Hotkeys_Map := Map(
+    "HotkeyBST", DEFAULT_HOTKEY_BST,
+    "HotkeyReload", DEFAULT_HOTKEY_RELOAD,
+    "HotkeySpamRespawn", DEFAULT_HOTKEY_SPAMRESPAWN,
+    "HotkeyTerminateGame", DEFAULT_HOTKEY_TERMINATEGAME,
+    "HotkeySuspendGame", DEFAULT_HOTKEY_SUSPENDGAME,
+)
 KeyHold := KEY_DELAY_DEFAULT
 KeyDelay := KEY_DELAY_DEFAULT
 IsMacroRunning := false
+gtaWindowID := 0
+EditReloadAllWeapons := DEFAULT_EDIT_RELOAD_All_WEAPONS
 
 
 class Version {
@@ -96,17 +105,6 @@ class Updater {
 
 
 SetTitleMatchMode(3) ; Exact match mode
-
-On_WM_KEYDOWN(wParam, lParam, msg, Hwnd) {
-    if (wParam == 0x0D) { ; 0x0D is the virtual key code for the Enter key
-        CurrControl := GuiCtrlFromHwnd(Hwnd)
-        ; Simulate click on active (Default) "Apply" button when editing an Edit field and pressing ENTER.
-        if (RegexMatch(CurrControl.ClassNN, "^Edit\d+$") and (CurrentDefaultButton.Text == "Apply")) {
-            ControlClick(CurrentDefaultButton)
-            ControlFocus(CurrControl)
-        }
-    }
-}
 
 On_WM_MOUSEMOVE(wParam, lParam, msg, Hwnd) {
     static PrevHwnd := 0
@@ -219,9 +217,7 @@ CenterElement(gui, element) {
 }
 
 ; Function to center multiple GUI elements with spacing and a left adjustment
-CenterElements(gui, elements*) {
-    spacing := 10
-
+CenterElements(gui, spacing := 10, elements*) {
     ; Get the dimensions of the GUI
     gui.GetPos(&guiX, &guiY, &guiWidth, &guiHeight)
 
@@ -256,6 +252,20 @@ GenerateMacroSpeedText(NewSpeed) {
     return "Macro Speed [" . NewSpeed . "ms]:"
 }
 
+SetRunMacroDependencies(State, ForceFocus := "") {
+    SuspendGame_Button.Enabled := State
+    DropBST_Button.Enabled := State
+    ReloadAllWeapons_Button.Enabled := State
+    SpamRespawn_Button.Enabled := State
+    Speed_Slider.Enabled := State
+    ReloadAllWeapons_Edit.Enabled := State
+    ReloadAllWeapons_UpDown.Enabled := State
+
+    if not ForceFocus == "" {
+        ForceFocus.Focus()
+    }
+}
+
 UpdateMacroSpeed(GuiCtrlObj, Info) {
     static RoundToNearestTen(value) {
         return Round(value / 10) * 10
@@ -269,30 +279,31 @@ UpdateMacroSpeed(GuiCtrlObj, Info) {
     Speed_Text.Value := GenerateMacroSpeedText(UpdatedSliderValue)
 
     ; This fixes an issue where the user can still scroll with the default properties while a message box is displayed.
-    Speed_Slider.Enabled := false
+    message := ""
     if (UpdatedSliderValue <= 10) {
-        MsgBox(
-            "Legend said, only NASA computers can run this!",
-            SCRIPT_TITLE,
-            "OK Iconi " . MSGBOX_SYSTEM_MODAL
-        )
+        message := "Legend said, only NASA computers can run this!"
     } else if (UpdatedSliderValue <= 20) {
-        MsgBox(
-            "This method is only recommended in invite-only sessions with a very limited number of players and a high-performance CPU and GPU; even then, consistent results are not even guaranteed.",
-            SCRIPT_TITLE,
-            "OK Iconi " . MSGBOX_SYSTEM_MODAL
-        )
+        message := "This method is only recommended in invite-only sessions with a very limited number of players and a high-performance CPU and GPU; even then, consistent results are not even guaranteed."
     } else if (UpdatedSliderValue <= 30) {
+        message := "This method is only recommended in small lobbies, with a limited number of players, as it may not work consistently otherwise."
+    }
+
+    if not message == "" {
+        SetRunMacroDependencies(false, Speed_Slider)
         MsgBox(
-            "This method is only recommended in small lobbies, with a limited number of players, as it may not work consistently otherwise.",
+            message,
             SCRIPT_TITLE,
             "OK Iconi " . MSGBOX_SYSTEM_MODAL
         )
+        SetRunMacroDependencies(true, Speed_Slider)
     }
-    Speed_Slider.Enabled := true
 
     KeyDelay := UpdatedSliderValue
     KeyHold := UpdatedSliderValue
+}
+
+OpenSettings(*) {
+    MySettingsGui.Show("w350 h364")
 }
 
 OpenRepo(*) {
@@ -363,28 +374,58 @@ SendKeyWithDelay(key, holdTime, releaseTime) {
     Sleep(releaseTime)
 }
 
-IsValidGTAwinRunning(Options := {}) {
+GetValidGTAwinRunning(Options := {}) {
     ; Get the HWND of the first window matching GTA_WINDOW_IDENTIFIER or uses the one supplied from user.
     gtaWindowID := Options.HasOwnProp("hwnd") ? Options.hwnd : ""
     CheckIsActive := Options.HasOwnProp("AndActive") ? Options.AndActive : ""
 
-    if gtaWindowID == "" {
-        if not WinExist(GTA_WINDOW_IDENTIFIER) {
-            return false
-        }
+    if gtaWindowID == 0 {
+        return 0
+    }
+
+    if not gtaWindowID == "" {
+        gtaWindowID := WinExist(GTA_WINDOW_IDENTIFIER . " ahk_id " . gtaWindowID)
     } else {
-        if (gtaWindowID == 0) or (not WinExist(GTA_WINDOW_IDENTIFIER . " ahk_id " . gtaWindowID)) {
-            return false
-        }
+        gtaWindowID := WinExist(GTA_WINDOW_IDENTIFIER)
+    }
+
+    if not gtaWindowID {
+        return 0
     }
 
     if not CheckIsActive == "" {
-        if CheckIsActive == WinActive("ahk_id " gtaWindowID) {
-            return false
+        isGTAwindowActive := WinActive("ahk_id " gtaWindowID)
+
+        if CheckIsActive == true {
+            if not isGTAwindowActive {
+                return 0
+            }
+        } else if CheckIsActive == false {
+            if isGTAwindowActive {
+                return 0
+            }
         }
     }
 
-    return true
+    return gtaWindowID
+}
+
+RunMacro(macroFunc, triggerSource) {
+    global isMacroRunning
+
+    if isMacroRunning {
+        return false
+    }
+    isMacroRunning := true
+    SetRunMacroDependencies(false)
+
+    result := macroFunc(triggerSource)
+
+    isMacroRunning := false
+    SetRunMacroDependencies(true)
+
+
+    return result
 }
 
 /*
@@ -410,10 +451,9 @@ ProcessGTAKeystrokes(triggerSource, Keystrokes) {
     }
 
 
-    ; Get the HWND of the first window matching GTA_WINDOW_IDENTIFIER
-    gtaWindowID := WinExist(GTA_WINDOW_IDENTIFIER)
+    ThisGtaWindowID := gtaWindowID
 
-    if not IsValidGTAwinRunning({ hwnd: gtaWindowID }) {
+    if not GetValidGTAwinRunning({ hwnd: ThisGtaWindowID }) {
         MsgBox(
             'ERROR: Unable to find a window titled "Grand Theft Auto V" using class "grcWindow" and with process name "GTA5.exe".`n`nPlease ensure GTA V is currently running.',
             SCRIPT_TITLE,
@@ -422,11 +462,11 @@ ProcessGTAKeystrokes(triggerSource, Keystrokes) {
         return false
     }
 
-    if triggerSource == "Button" and not WinActive("ahk_id " gtaWindowID) {
+    if triggerSource == "Button" and not WinActive("ahk_id " ThisGtaWindowID) {
         MyGui.Minimize()
-        WinActivate("ahk_id " gtaWindowID)
+        WinActivate("ahk_id " ThisGtaWindowID)
         Sleep(KeyDelay * 5)
-        if not WinActive("ahk_id " gtaWindowID) {
+        if not WinActive("ahk_id " ThisGtaWindowID) {
             MsgBox(
                 "ERROR: Failed to activate GTA V window, aborting process.",
                 SCRIPT_TITLE,
@@ -445,7 +485,7 @@ ProcessGTAKeystrokes(triggerSource, Keystrokes) {
         Keystroke.delay := Keystroke.HasOwnProp("delay") ? Keystroke.delay : KeyDelay
 
         loop Keystroke.count {
-            if not IsValidGTAwinRunning({ hwnd: gtaWindowID, AndActive: true }) {
+            if not GetValidGTAwinRunning({ hwnd: ThisGtaWindowID, AndActive: true }) {
                 MsgBox(
                     "ERROR: GTA V window is no longer active, aborting process.",
                     SCRIPT_TITLE,
@@ -470,20 +510,6 @@ ProcessGTAKeystrokes(triggerSource, Keystrokes) {
     return true
 }
 
-RunMacro(macroFunc, triggerSource) {
-    global isMacroRunning
-
-    if isMacroRunning {
-        return false
-    }
-    isMacroRunning := true
-
-    result := macroFunc(triggerSource)
-
-    isMacroRunning := false
-    return result
-}
-
 DropBST(triggerSource) {
     BST_Keystrokes := [
         { key: ",", delay: KeyDelay * 6 }, ; in [Interaction Menu]
@@ -506,30 +532,21 @@ ReloadAllWeapons(triggerSource) {
         { key: "Enter", count: 2, delay: KeyDelay * 2 } ; in [Health and Ammo] and [Ammo]
     )
 
-    if (ReloadAllWeapons_CheckBox.Value == 1) {
-        static NumOfWeaponTypesToIterate := 9
-
-        ; Iterate through each [Ammo Type] and select the [Full Ammo $x] option for each
-        Loop NumOfWeaponTypesToIterate {
-            Reload_Keystrokes.Push(
-                { key: "Up" }, ; hover [Full Ammo $x]
-                { key: "Enter", delay: KeyDelay * 2 } ; select [Full Ammo $x]
-            )
-
-            ; Only add "Down" and "Left" if it's not the last iteration
-            if (A_Index < NumOfWeaponTypesToIterate) {
-                Reload_Keystrokes.Push(
-                    { key: "Down" }, ; hover [Ammo Type < x >]
-                    { key: "Left" } ; hover [Ammo Type < y >]
-                )
-            }
-        }
-    } else {
+    NumOfWeaponTypesToIterate := EditReloadAllWeapons
+    ; Iterate through each [Ammo Type] and select the [Full Ammo $x] option for each
+    Loop NumOfWeaponTypesToIterate {
         Reload_Keystrokes.Push(
-            { key: "Left" }, ; hover [Ammo Type < All >]
             { key: "Up" }, ; hover [Full Ammo $x]
             { key: "Enter", delay: KeyDelay * 2 } ; select [Full Ammo $x]
         )
+
+        ; Only add "Down" and "Left" if it's not the last iteration
+        if (A_Index < NumOfWeaponTypesToIterate) {
+            Reload_Keystrokes.Push(
+                { key: "Down" }, ; hover [Ammo Type < x >]
+                { key: "Left" } ; hover [Ammo Type < y >]
+            )
+        }
     }
 
     ; exit [Interaction Menu]
@@ -546,225 +563,235 @@ SpamRespawn(triggerSource) {
     return ProcessGTAKeystrokes(triggerSource, SpamRespawn_Keystrokes)
 }
 
+TerminateGame(triggerSource) {
+    SetRunMacroDependencies(false)
+
+    if not gtaWindowID {
+        MsgBox(
+            'ERROR: Unable to find a window titled "Grand Theft Auto V" using class "grcWindow" and with process name "GTA5.exe".`n`nPlease ensure GTA V is currently running.',
+            SCRIPT_TITLE,
+            "OK Icon! " . MSGBOX_SYSTEM_MODAL
+        )
+    }
+    ProcessClose(WinGetPID(gtaWindowID))
+
+    SetRunMacroDependencies(true)
+}
+
+SuspendGame(triggerSource) {
+    OpenProcess(PID) {
+        h := DllCall("OpenProcess", "uInt", 0x1F0FFF, "Int", 0, "Int", PID)
+        return h ? h : -1
+    }
+
+    SuspendProcess(h) {
+        DllCall("ntdll.dll\NtSuspendProcess", "Int", h)
+    }
+
+    ResumeProcess(h) {
+        DllCall("ntdll.dll\NtResumeProcess", "Int", h)
+    }
+
+    CloseProcess(h) {
+        DllCall("CloseHandle", "Int", h)
+    }
+
+
+    SetRunMacroDependencies(false)
+    if not gtaWindowID {
+        MsgBox(
+            'ERROR: Unable to find a window titled "Grand Theft Auto V" using class "grcWindow" and with process name "GTA5.exe".`n`nPlease ensure GTA V is currently running.',
+            SCRIPT_TITLE,
+            "OK Icon! " . MSGBOX_SYSTEM_MODAL
+        )
+    }
+    h := OpenProcess(WinGetPID(gtaWindowID))
+    if h {
+        SuspendProcess(h)
+        Sleep(8000)
+        ResumeProcess(h)
+        CloseProcess(h)
+    }
+    SetRunMacroDependencies(true)
+}
+
+GetHotkeysObjects_Map(HotkeyName := "") {
+    HotkeysObjects_Map := Map(
+        "HotkeyBST", {
+            Hotkey: Hotkeys_Map["HotkeyBST"],
+            DefaultHotkey: DEFAULT_HOTKEY_BST,
+            Button: DropBST_Button,
+            HotkeyEdit: HotkeyBST_HotkeyEdit,
+            ApplyButton: HotkeyBST_ApplyButton,
+            ResetButton: HotkeyBST_ResetButton,
+            ToggleButton: HotkeyBST_ToggleButton,
+            MacroFunc: DropBST
+        },
+        "HotkeyReload", {
+            Hotkey: Hotkeys_Map["HotkeyReload"],
+            DefaultHotkey: DEFAULT_HOTKEY_RELOAD,
+            Button: ReloadAllWeapons_Button,
+            HotkeyEdit: HotkeyReload_HotkeyEdit,
+            ApplyButton: HotkeyReload_ApplyButton,
+            ResetButton: HotkeyReload_ResetButton,
+            ToggleButton: HotkeyReload_ToggleButton,
+            MacroFunc: ReloadAllWeapons
+        },
+        "HotkeySpamRespawn", {
+            Hotkey: Hotkeys_Map["HotkeySpamRespawn"],
+            DefaultHotkey: DEFAULT_HOTKEY_SPAMRESPAWN,
+            Button: SpamRespawn_Button,
+            HotkeyEdit: HotkeySpamRespawn_HotkeyEdit,
+            ApplyButton: HotkeySpamRespawn_ApplyButton,
+            ResetButton: HotkeySpamRespawn_ResetButton,
+            ToggleButton: HotkeySpamRespawn_ToggleButton,
+            MacroFunc: SpamRespawn
+        },
+        "HotkeyTerminateGame", {
+            Hotkey: Hotkeys_Map["HotkeyTerminateGame"],
+            DefaultHotkey: DEFAULT_HOTKEY_TERMINATEGAME,
+            Button: TerminateGame_Button,
+            HotkeyEdit: HotkeyTerminateGame_HotkeyEdit,
+            ApplyButton: HotkeyTerminateGame_ApplyButton,
+            ResetButton: HotkeyTerminateGame_ResetButton,
+            ToggleButton: HotkeyTerminateGame_ToggleButton,
+            MacroFunc: TerminateGame
+        },
+        "HotkeySuspendGame", {
+            Hotkey: Hotkeys_Map["HotkeySuspendGame"],
+            DefaultHotkey: DEFAULT_HOTKEY_SUSPENDGAME,
+            Button: SuspendGame_Button,
+            HotkeyEdit: HotkeySuspendGame_HotkeyEdit,
+            ApplyButton: HotkeySuspendGame_ApplyButton,
+            ResetButton: HotkeySuspendGame_ResetButton,
+            ToggleButton: HotkeySuspendGame_ToggleButton,
+            MacroFunc: SuspendGame
+        }
+    )
+    if (HotkeyName != "") {
+        return HotkeysObjects_Map[HotkeyName]
+    }
+
+    return HotkeysObjects_Map
+}
+
 RemoveHotkey(HotkeyToRemove) {
-    if (HotkeyToRemove == "HotkeyBST") {
-        global HotkeyBST
-        if not (HotkeyBST == false) {
-            Hotkey(HotkeyBST, "Off")
-        }
-        HotkeyBST := false
-        HotkeyBST_Edit.Value := ""
-    } else if (HotkeyToRemove == "HotkeyReload") {
-        global HotkeyReload
-        if not (HotkeyBST == false) {
-            Hotkey(HotkeyBST, "Off")
-        }
-        HotkeyReload := false
-        HotkeyReload_Edit.Value := ""
-    } else if (HotkeyToRemove == "HotkeySpamRespawn") {
-        global HotkeySpamRespawn
-        if not (HotkeyBST == false) {
-            Hotkey(HotkeyBST, "Off")
-        }
-        HotkeySpamRespawn := false
-        HotkeySpamRespawn_Edit.Value := ""
+    HotkeyObjects_Map := GetHotkeysObjects_Map(HotkeyToRemove)
+
+    if not (HotkeyObjects_Map.Hotkey == false) {
+        Hotkey(HotkeyObjects_Map.Hotkey, "Off")
     }
+    HotkeyObjects_Map.HotkeyEdit.Value := ""
+    HotkeyObjects_Map.ToggleButton.Enabled := false
+    Hotkeys_Map[HotkeyToRemove] := false
 }
 
-ApplyHotkeyBST(*) {
-    global HotkeyBST
-
-    if (HotkeyBST == false) {
-        return true
-    }
-
-    if InArray(HotkeyBST_Edit.Value, [HotkeyReload, HotkeySpamRespawn]) {
-        MsgBox(
-            "Error: You cannot assign a hotkey to more than one macro.",
-            SCRIPT_TITLE,
-            "OK Icon! " . MSGBOX_SYSTEM_MODAL
-        )
-        HotkeyBST_Edit.Value := HotkeyBST
+ApplyHotkey(HotkeyToApply) {
+    CheckHotkeyConflict(HotkeyEdit, CurrentHotkeyName, OriginalValue) {
+        for HotkeyName, Data in GetHotkeysObjects_Map() {
+            if not CurrentHotkeyName == HotkeyName and HotkeyEdit.Value == Data.Hotkey {
+                MsgBox(
+                    "Error: You cannot assign a hotkey to more than one macro.",
+                    SCRIPT_TITLE,
+                    "OK Icon! " . MSGBOX_SYSTEM_MODAL
+                )
+                HotkeyEdit.Value := OriginalValue
+                return true
+            }
+        }
         return false
     }
 
-    Hotkey(HotkeyBST, "Off")
+    HotkeyObjects_Map := GetHotkeysObjects_Map(HotkeyToApply)
 
-    if (HotkeyBST_Edit.Value == "") {
-        RemoveHotkey("HotkeyBST")
+    if not (HotkeyObjects_Map.Hotkey == false) {
+        if CheckHotkeyConflict(HotkeyObjects_Map.HotkeyEdit, HotkeyToApply, HotkeyObjects_Map.Hotkey) {
+            return false
+        }
+
+        Hotkey(HotkeyObjects_Map.Hotkey, "Off")
+    }
+
+    if (HotkeyObjects_Map.HotkeyEdit.Value == "") {
+        RemoveHotkey(HotkeyToApply)
         return true
     }
 
     try {
-        Hotkey(HotkeyBST_Edit.Value, (*) => RunMacro(DropBST, "Hotkey"))
+        Hotkey(HotkeyObjects_Map.HotkeyEdit.Value, (*) => RunMacro(HotkeyObjects_Map.MacroFunc, "Hotkey"))
     } catch error as err {
-        if ((err.what == "Hotkey") and ((err.message == "Invalid key name.") or (err.message == "Invalid hotkey."))) {
+        if ((err.What == "Hotkey") and ((err.Message == "Invalid key name.") or (err.Message == "Invalid hotkey."))) {
             MsgBox(
-                "Error: " . err.message,
+                "Error: " . err.Message,
                 SCRIPT_TITLE,
                 "OK Icon! " . MSGBOX_SYSTEM_MODAL
             )
-            Hotkey(HotkeyBST, (*) => RunMacro(DropBST, "Hotkey"))
-            Hotkey(HotkeyBST, "On")
-            HotkeyBST_Edit.Value := HotkeyBST
+
+            if (HotkeyObjects_Map.Hotkey == false) {
+                HotkeyObjects_Map.HotkeyEdit.Value := ""
+                return true
+            }
+
+            Hotkey(HotkeyObjects_Map.Hotkey, (*) => RunMacro(HotkeyObjects_Map.MacroFunc, "Hotkey"))
+            Hotkey(HotkeyObjects_Map.Hotkey, "On")
+            HotkeyObjects_Map.HotkeyEdit.Value := HotkeyObjects_Map.Hotkey
+
             return false
         }
         throw err
     }
 
-    Hotkey(HotkeyBST_Edit.Value, "On")
-    HotkeyBST := HotkeyBST_Edit.Value
-
-    return true
-}
-
-ApplyHotkeyReload(*) {
-    global HotkeyReload
-
-    if (HotkeyReload == false) {
-        return true
-    }
-
-    if InArray(HotkeyReload_Edit.Value, [HotkeyBST, HotkeySpamRespawn]) {
-        MsgBox(
-            "Error: You cannot assign a hotkey to more than one macro.",
-            SCRIPT_TITLE,
-            "OK Icon! " . MSGBOX_SYSTEM_MODAL
-        )
-        HotkeyReload_Edit.Value := HotkeyReload
-        return false
-    }
-
-    Hotkey(HotkeyReload, "Off")
-
-    if (HotkeyReload_Edit.Value == "") {
-        RemoveHotkey("HotkeyReload")
-        return true
-    }
-
-    try {
-        Hotkey(HotkeyReload_Edit.Value, (*) => RunMacro(ReloadAllWeapons, "Hotkey"))
-    } catch error as err {
-        if ((err.what == "Hotkey") and ((err.message == "Invalid key name.") or (err.message == "Invalid hotkey."))) {
-            MsgBox(
-                "Error: " . err.message,
-                SCRIPT_TITLE,
-                "OK Icon! " . MSGBOX_SYSTEM_MODAL
-            )
-            Hotkey(HotkeyReload, (*) => RunMacro(ReloadAllWeapons, "Hotkey"))
-            Hotkey(HotkeyReload, "On")
-            HotkeyReload_Edit.Value := HotkeyReload
-            return false
-        }
-        throw err
-    }
-
-    Hotkey(HotkeyReload_Edit.Value, "On")
-    HotkeyReload := HotkeyReload_Edit.Value
-
-    return true
-}
-
-ApplyHotkeySpamRespawn(*) {
-    global HotkeySpamRespawn
-
-    if (HotkeySpamRespawn == false) {
-        return true
-    }
-
-    if InArray(HotkeySpamRespawn_Edit.Value, [HotkeyBST, HotkeyReload]) {
-        MsgBox(
-            "Error: You cannot assign a hotkey to more than one macro.",
-            SCRIPT_TITLE,
-            "OK Icon! " . MSGBOX_SYSTEM_MODAL
-        )
-        HotkeySpamRespawn_Edit.Value := HotkeySpamRespawn
-        return false
-    }
-
-    Hotkey(HotkeySpamRespawn, "Off")
-
-    if (HotkeySpamRespawn_Edit.Value == "") {
-        RemoveHotkey("HotkeySpamRespawn")
-        return true
-    }
-
-    try {
-        Hotkey(HotkeySpamRespawn_Edit.Value, (*) => RunMacro(SpamRespawn, "Hotkey"))
-    } catch error as err {
-        if ((err.what == "Hotkey") and ((err.message == "Invalid key name.") or (err.message == "Invalid hotkey."))) {
-            MsgBox(
-                "Error: " . err.message,
-                SCRIPT_TITLE,
-                "OK Icon! " . MSGBOX_SYSTEM_MODAL
-            )
-            Hotkey(HotkeySpamRespawn, (*) => RunMacro(SpamRespawn, "Hotkey"))
-            Hotkey(HotkeySpamRespawn, "On")
-            HotkeySpamRespawn_Edit.Value := "F3"
-            return false
-        }
-        throw err
-    }
-
-    Hotkey(HotkeySpamRespawn_Edit.Value, "On")
-    HotkeySpamRespawn := HotkeySpamRespawn_Edit.Value
+    Hotkey(HotkeyObjects_Map.HotkeyEdit.Value, "On")
+    HotkeyObjects_Map.ToggleButton.Enabled := true
+    Hotkeys_Map[HotkeyToApply] := HotkeyObjects_Map.HotkeyEdit.Value
 
     return true
 }
 
 ResetHotkey(HotkeyToReset) {
-    if (HotkeyToReset == "HotkeyBST") {
-        global HotkeyBST
-        if not (HotkeyBST == false) {
-            Hotkey(HotkeyBST, "Off")
-        }
-        Hotkey(DEFAULT_HOTKEY_BST, "On")
-        HotkeyBST := DEFAULT_HOTKEY_BST
-        HotkeyBST_Edit.Value := DEFAULT_HOTKEY_BST
-    } else if (HotkeyToReset == "HotkeyReload") {
-        global HotkeyReload
-        if not (HotkeyReload == false) {
-            Hotkey(HotkeyReload, "Off")
-        }
-        Hotkey(DEFAULT_HOTKEY_RELOAD, "On")
-        HotkeyReload := DEFAULT_HOTKEY_RELOAD
-        HotkeyReload_Edit.Value := DEFAULT_HOTKEY_RELOAD
-    } else if (HotkeyToReset == "HotkeySpamRespawn") {
-        global HotkeySpamRespawn
-        if not (HotkeySpamRespawn == false) {
-            Hotkey(HotkeySpamRespawn, "Off")
-        }
-        Hotkey(DEFAULT_HOTKEY_SPAMRESPAWN, "On")
-        HotkeySpamRespawn := DEFAULT_HOTKEY_SPAMRESPAWN
-        HotkeySpamRespawn_Edit.Value := DEFAULT_HOTKEY_SPAMRESPAWN
+    HotkeyObjects_Map := GetHotkeysObjects_Map(HotkeyToReset)
+
+    if not (HotkeyObjects_Map.Hotkey == false) {
+        Hotkey(HotkeyObjects_Map.Hotkey, "Off")
     }
-}
-
-GetHotkeyToggleButtonsMap() {
-    Buttons_Map := Map()
-    Buttons_Map.Set("HotkeyBST", { ToggleButton: HotkeyBSTToggle_Button, Hotkey: HotkeyBST })
-    Buttons_Map.Set("HotkeyReload", { ToggleButton: HotkeyReloadToggle_Button, Hotkey: HotkeyReload })
-    Buttons_Map.Set("HotkeySpamRespawn", { ToggleButton: HotkeySpamRespawnToggle_Button, Hotkey: HotkeySpamRespawn })
-
-    return Buttons_Map
+    Hotkey(HotkeyObjects_Map.DefaultHotkey, "On")
+    HotkeyObjects_Map.HotkeyEdit.Value := HotkeyObjects_Map.DefaultHotkey
+    HotkeyObjects_Map.ToggleButton.Enabled := true
+    Hotkeys_Map[HotkeyToReset] := HotkeyObjects_Map.DefaultHotkey
 }
 
 ToggleHotkey(HotkeyToToggle) {
-    Buttons_Map := GetHotkeyToggleButtonsMap()
+    HotkeyObjects_Map := GetHotkeysObjects_Map(HotkeyToToggle)
 
-    if Buttons_Map.Has(HotkeyToToggle) {
-        ToggleItem := Buttons_Map[HotkeyToToggle]
-        ToggleButton := ToggleItem.ToggleButton
-        _Hotkey := ToggleItem.Hotkey
-
-        if (ToggleButton.Text == "Enable") {
-            Hotkey(_Hotkey, "On")
-            ToggleButton.Text := "Disable"
-        } else if (ToggleButton.Text == "Disable") {
-            Hotkey(_Hotkey, "Off")
-            ToggleButton.Text := "Enable"
+    if (HotkeyObjects_Map.ToggleButton.Text == "Enable") {
+        try {
+            Hotkey(HotkeyObjects_Map.Hotkey, "On")
+        } catch error as err {
+            if not ((err.What == "Hotkey") and (err.Message == "Nonexistent hotkey.")) {
+                throw err
+            }
+        } else {
+            HotkeyObjects_Map.ToggleButton.Text := "Disable"
+        }
+    } else if (HotkeyObjects_Map.ToggleButton.Text == "Disable") {
+        try {
+            Hotkey(HotkeyObjects_Map.Hotkey, "Off")
+        } catch error as err {
+            if not ((err.What == "Hotkey") and (err.Message == "Nonexistent hotkey.")) {
+                throw err
+            }
+        } else {
+            HotkeyObjects_Map.ToggleButton.Text := "Enable"
         }
     }
+}
+
+OnEdit_Focus(ApplyButton) {
+    ApplyButton.Opt("+Default")
+}
+
+OnEdit_LoseFocus(ApplyButton) {
+    ApplyButton.Opt("-Default")
 }
 
 UpdateTrayMenuShowHideOptionState(MyGui) {
@@ -781,7 +808,7 @@ UpdateTrayMenuShowHideOptionState(MyGui) {
     try {
         A_TrayMenu.Rename(RenameFrom, ItemName)
     } catch error as err {
-        if not ((err.what == "Menu.Prototype.Rename") and (err.Message == "Nonexistent menu item.")) {
+        if not ((err.What == "Menu.Prototype.Rename") and (err.Message == "Nonexistent menu item.")) {
             throw err
         }
     } else {
@@ -792,20 +819,67 @@ UpdateTrayMenuShowHideOptionState(MyGui) {
 }
 
 IsGTARunning_Callback() {
-    Buttons_Map := GetHotkeyToggleButtonsMap()
-    IsGTAwinActive := IsValidGTAwinRunning({ AndActive: true })
+    global gtaWindowID
 
-    for HotkeyName, Data in Buttons_Map {
+    gtaWindowID := GetValidGTAwinRunning()
+
+    for HotkeyName, Data in GetHotkeysObjects_Map() {
         ToggleButton := Data.ToggleButton
         _Hotkey := Data.Hotkey
 
         if (ToggleButton.Text == "Disable") {
-            Hotkey(_Hotkey, IsGTAwinActive ? "On" : "Off")
+            try {
+                Hotkey(_Hotkey, (gtaWindowID and WinActive(gtaWindowID)) ? "On" : "Off")
+            } catch error as err {
+                if not ((err.What == "Hotkey") and (err.Message == "Nonexistent hotkey.")) {
+                    throw err
+                }
+            }
         }
     }
 }
 
+ReloadAllWeapons_Edit__DisplayErrorAndReset(GuiCtrlObj) {
+    SetRunMacroDependencies(false)
+    MsgBox(
+        "Error: The value must be a number between 1 and 10.",
+        SETTINGS_SCRIPT_TITLE,
+        "OK Icon! " . MSGBOX_SYSTEM_MODAL
+    )
+    GuiCtrlObj.Value := EditReloadAllWeapons
+    SetRunMacroDependencies(true)
+}
 
+ReloadAllWeapons_Edit_Change__Callback(GuiCtrlObj, Info) {
+    Value := GuiCtrlObj.Value
+
+    if Value == "" {
+        return false
+    }
+
+    if !IsInteger(Value) or (Value < 1 or Value > 10) {
+        ReloadAllWeapons_Edit__DisplayErrorAndReset(GuiCtrlObj)
+        return false
+    }
+
+    global EditReloadAllWeapons
+    EditReloadAllWeapons := Value
+
+    return true
+}
+
+ReloadAllWeapons_Edit_LoseFocus__Callback(GuiCtrlObj, Info) {
+    Value := GuiCtrlObj.Value
+
+    if Value == "" {
+        ReloadAllWeapons_Edit__DisplayErrorAndReset(GuiCtrlObj)
+        return false
+    }
+    return true
+}
+
+
+; Start Main GUI
 MyGui := Gui()
 MyGui.Opt("+AlwaysOnTop")
 MyGui.Title := SCRIPT_TITLE
@@ -837,87 +911,121 @@ SpamRespawn_Button := MyGui.AddButton("Disabled x+10", "Spam Respawn*")
 SpamRespawn_Button.OnEvent("Click", (*) => RunMacro(SpamRespawn, "Button"))
 SpamRespawn_Button.ToolTip := "*Use that when you're dead to spawn faster."
 
-ReloadAllWeapons_CheckBox := MyGui.AddCheckBox("x10", "Reload All Weapons: FIX (slower)")
-ReloadAllWeapons_CheckBox.Value := 1
+MyGui.AddText("x10")
 
-AddSeparator(MyGui)
+TerminateGame_Button := MyGui.AddButton("Disabled", "Terminate Game*")
+TerminateGame_Button.OnEvent("Click", (*) => RunMacro(TerminateGame, "Button"))
+TerminateGame_Button.ToolTip := "*You can use this to select the Casino Lucky Wheel slot you want.`nIf it doesn't match your choice, close the game and try again as many times as needed."
+SuspendGame_Button := MyGui.AddButton("Disabled x+0", "Suspend Game*")
+SuspendGame_Button.OnEvent("Click", (*) => RunMacro(SuspendGame, "Button"))
+SuspendGame_Button.ToolTip := "*You can use this to force yourself into a solo public session.`nThis is especially useful when making risky sales in public lobbies."
 
-OnEdit_Focus(ApplyButton) {
-    global CurrentDefaultButton
+AddSeparator(MyGui, {text1: "x10"})
 
-    ApplyButton.Opt("+Default")
+Settings_Button := MyGui.AddButton("Disabled x+0", "Settings")
+Settings_Button.OnEvent("Click", OpenSettings)
 
-    CurrentDefaultButton := ApplyButton
-}
+OpenRepo_Button := MyGui.AddButton("Disabled x+0", "Open Repository")
+OpenRepo_Button.OnEvent("Click", OpenRepo)
 
-OnEdit_LoseFocus(ApplyButton) {
-    global CurrentDefaultButton
-
-    ApplyButton.Opt("-Default")
-
-    CurrentDefaultButton := false
-}
-
-
-MyGui.AddText(, 'Hotkey for "Drop BST" :')
-HotkeyBST_Edit := MyGui.AddEdit("w100 Limit17", DEFAULT_HOTKEY_BST)
-HotkeyBST_Edit.OnEvent("Focus", (*) => OnEdit_Focus(HotkeyBST_Button))
-HotkeyBST_Edit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(HotkeyBST_Button))
-HotkeyBST_Button := MyGui.AddButton("w66 x+10", "Apply")
-HotkeyBST_Button.OnEvent("LoseFocus", ApplyHotkeyBST)
-HotkeyBSTReset_Button := MyGui.AddButton("w66 x+10", "Reset")
-HotkeyBSTReset_Button.OnEvent("Click", (*) => ResetHotkey("HotkeyBST"))
-HotkeyBSTToggle_Button := MyGui.AddButton("w66 x+10", "Disable")
-HotkeyBSTToggle_Button.OnEvent("Click", (*) => ToggleHotkey("HotkeyBST"))
-MyGui.AddText("x10", 'Hotkey for "Reload All Weapons" :')
-HotkeyReload_Edit := MyGui.AddEdit("w100 Limit17", DEFAULT_HOTKEY_RELOAD)
-HotkeyReload_Edit.OnEvent("Focus", (*) => OnEdit_Focus(HotkeyReload_Button))
-HotkeyReload_Edit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(HotkeyReload_Button))
-HotkeyReload_Button := MyGui.AddButton("w66 x+10", "Apply")
-HotkeyReload_Button.OnEvent("Click", ApplyHotkeyReload)
-HotkeyReloadReset_Button := MyGui.AddButton("w66 x+10", "Reset")
-HotkeyReloadReset_Button.OnEvent("Click", (*) => ResetHotkey("HotkeyReload"))
-HotkeyReloadToggle_Button := MyGui.AddButton("w66 x+10", "Disable")
-HotkeyReloadToggle_Button.OnEvent("Click", (*) => ToggleHotkey("HotkeyReload"))
-MyGui.AddText("x10", 'Hotkey for "Spam Respawn" :')
-HotkeySpamRespawn_Edit := MyGui.AddEdit("w100 Limit17", DEFAULT_HOTKEY_SPAMRESPAWN)
-HotkeySpamRespawn_Edit.OnEvent("Focus", (*) => OnEdit_Focus(HotkeySpamRespawn_Button))
-HotkeySpamRespawn_Edit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(HotkeySpamRespawn_Button))
-HotkeySpamRespawn_Button := MyGui.AddButton("w66 x+10", "Apply")
-HotkeySpamRespawn_Button.OnEvent("Click", ApplyHotkeySpamRespawn)
-HotkeySpamRespawnReset_Button := MyGui.AddButton("w66 x+10", "Reset")
-HotkeySpamRespawnReset_Button.OnEvent("Click", (*) => ResetHotkey("HotkeySpamRespawn"))
-HotkeySpamRespawnToggle_Button := MyGui.AddButton("w66 x+10", "Disable")
-HotkeySpamRespawnToggle_Button.OnEvent("Click", (*) => ToggleHotkey("HotkeySpamRespawn"))
-
-HotkeysHelp_Link := MyGui.AddLink("x10", 'Full list of possible Hotkeys:`n<a id="KeyListHelp" href="https://www.autohotkey.com/docs/v2/KeyList.htm">https://www.autohotkey.com/docs/v2/KeyList.htm</a>')
-HotkeysHelp_Link.OnEvent("Click", Link_Click)
-
-AddSeparator(MyGui)
-
-Help_Button := MyGui.AddButton("x+70", "Open GitHub Repository")
-Help_Button.OnEvent("Click", OpenRepo)
-
-Updater_Button := MyGui.AddButton("x+6", "Check For Updates")
+Updater_Button := MyGui.AddButton("Disabled x+0", "Check For Updates")
 Updater_Button.OnEvent("Click", (*) => RunUpdater("MANUAL_CHECK"))
+; END Main GUI
 
-Hotkey(HotkeyBST, (*) => RunMacro(DropBST, "Hotkey"), "Off")
-Hotkey(HotkeyReload, (*) => RunMacro(ReloadAllWeapons, "Hotkey"), "Off")
-Hotkey(HotkeySpamRespawn, (*) => RunMacro(SpamRespawn, "Hotkey"), "Off")
+; START Settings GUI
+MySettingsGui := Gui()
+MySettingsGui.Opt("+AlwaysOnTop")
+MySettingsGui.Title := SETTINGS_SCRIPT_TITLE
 
-MyGui.Show("w350 h430")
+ReloadAllWeapons_Text := MySettingsGui.AddText(, 'Number of iterations for "Reload All Weapons" :')
+ReloadAllWeapons_Edit := MySettingsGui.AddEdit("w40")
+ReloadAllWeapons_Edit.OnEvent("Change", ReloadAllWeapons_Edit_Change__Callback)
+ReloadAllWeapons_Edit.OnEvent("LoseFocus", ReloadAllWeapons_Edit_LoseFocus__Callback)
+ReloadAllWeapons_UpDown := MySettingsGui.AddUpDown("Range1-10", DEFAULT_EDIT_RELOAD_All_WEAPONS)
+
+AddSeparator(MySettingsGui)
+
+MySettingsGui.AddText(, 'Hotkey for "Drop BST" :')
+HotkeyBST_HotkeyEdit := MySettingsGui.AddEdit("w100 Limit17", DEFAULT_HOTKEY_BST)
+HotkeyBST_HotkeyEdit.OnEvent("Focus", (*) => OnEdit_Focus(HotkeyBST_ApplyButton))
+HotkeyBST_HotkeyEdit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(HotkeyBST_ApplyButton))
+HotkeyBST_ApplyButton := MySettingsGui.AddButton("w66 x+10", "Apply")
+HotkeyBST_ApplyButton.OnEvent("Click", (*) => ApplyHotkey("HotkeyBST"))
+HotkeyBST_ResetButton := MySettingsGui.AddButton("w66 x+10", "Reset")
+HotkeyBST_ResetButton.OnEvent("Click", (*) => ResetHotkey("HotkeyBST"))
+HotkeyBST_ToggleButton := MySettingsGui.AddButton("w66 x+10", "Disable")
+HotkeyBST_ToggleButton.OnEvent("Click", (*) => ToggleHotkey("HotkeyBST"))
+MySettingsGui.AddText("x10", 'Hotkey for "Reload All Weapons" :')
+HotkeyReload_HotkeyEdit := MySettingsGui.AddEdit("w100 Limit17", DEFAULT_HOTKEY_RELOAD)
+HotkeyReload_HotkeyEdit.OnEvent("Focus", (*) => OnEdit_Focus(HotkeyReload_ApplyButton))
+HotkeyReload_HotkeyEdit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(HotkeyReload_ApplyButton))
+HotkeyReload_ApplyButton := MySettingsGui.AddButton("w66 x+10", "Apply")
+HotkeyReload_ApplyButton.OnEvent("Click", (*) => ApplyHotkey("HotkeyReload"))
+HotkeyReload_ResetButton := MySettingsGui.AddButton("w66 x+10", "Reset")
+HotkeyReload_ResetButton.OnEvent("Click", (*) => ResetHotkey("HotkeyReload"))
+HotkeyReload_ToggleButton := MySettingsGui.AddButton("w66 x+10", "Disable")
+HotkeyReload_ToggleButton.OnEvent("Click", (*) => ToggleHotkey("HotkeyReload"))
+MySettingsGui.AddText("x10", 'Hotkey for "Spam Respawn" :')
+HotkeySpamRespawn_HotkeyEdit := MySettingsGui.AddEdit("w100 Limit17", DEFAULT_HOTKEY_SPAMRESPAWN)
+HotkeySpamRespawn_HotkeyEdit.OnEvent("Focus", (*) => OnEdit_Focus(HotkeySpamRespawn_ApplyButton))
+HotkeySpamRespawn_HotkeyEdit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(HotkeySpamRespawn_ApplyButton))
+HotkeySpamRespawn_ApplyButton := MySettingsGui.AddButton("w66 x+10", "Apply")
+HotkeySpamRespawn_ApplyButton.OnEvent("Click", (*) => ApplyHotkey("HotkeySpamRespawn"))
+HotkeySpamRespawn_ResetButton := MySettingsGui.AddButton("w66 x+10", "Reset")
+HotkeySpamRespawn_ResetButton.OnEvent("Click", (*) => ResetHotkey("HotkeySpamRespawn"))
+HotkeySpamRespawn_ToggleButton := MySettingsGui.AddButton("w66 x+10", "Disable")
+HotkeySpamRespawn_ToggleButton.OnEvent("Click", (*) => ToggleHotkey("HotkeySpamRespawn"))
+MySettingsGui.AddText("x10", 'Hotkey for "Terminate Game" :')
+HotkeyTerminateGame_HotkeyEdit := MySettingsGui.AddEdit("w100 Limit17", DEFAULT_HOTKEY_TERMINATEGAME)
+HotkeyTerminateGame_HotkeyEdit.OnEvent("Focus", (*) => OnEdit_Focus(HotkeyTerminateGame_ApplyButton))
+HotkeyTerminateGame_HotkeyEdit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(HotkeyTerminateGame_ApplyButton))
+HotkeyTerminateGame_ApplyButton := MySettingsGui.AddButton("w66 x+10", "Apply")
+HotkeyTerminateGame_ApplyButton.OnEvent("Click", (*) => ApplyHotkey("HotkeyTerminateGame"))
+HotkeyTerminateGame_ResetButton := MySettingsGui.AddButton("w66 x+10", "Reset")
+HotkeyTerminateGame_ResetButton.OnEvent("Click", (*) => ResetHotkey("HotkeyTerminateGame"))
+HotkeyTerminateGame_ToggleButton := MySettingsGui.AddButton("w66 x+10", "Enable")
+HotkeyTerminateGame_ToggleButton.OnEvent("Click", (*) => ToggleHotkey("HotkeyTerminateGame"))
+MySettingsGui.AddText("x10", 'Hotkey for "Suspend Game" :')
+HotkeySuspendGame_HotkeyEdit := MySettingsGui.AddEdit("w100 Limit17", DEFAULT_HOTKEY_SUSPENDGAME)
+HotkeySuspendGame_HotkeyEdit.OnEvent("Focus", (*) => OnEdit_Focus(HotkeySpamRespawn_ApplyButton))
+HotkeySuspendGame_HotkeyEdit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(HotkeySpamRespawn_ApplyButton))
+HotkeySuspendGame_ApplyButton := MySettingsGui.AddButton("w66 x+10", "Apply")
+HotkeySuspendGame_ApplyButton.OnEvent("Click", (*) => ApplyHotkey("HotkeySuspendGame"))
+HotkeySuspendGame_ResetButton := MySettingsGui.AddButton("w66 x+10", "Reset")
+HotkeySuspendGame_ResetButton.OnEvent("Click", (*) => ResetHotkey("HotkeySuspendGame"))
+HotkeySuspendGame_ToggleButton := MySettingsGui.AddButton("w66 x+10", "Enable")
+HotkeySuspendGame_ToggleButton.OnEvent("Click", (*) => ToggleHotkey("HotkeySuspendGame"))
+
+HotkeysHelp_Link := MySettingsGui.AddLink("x10", 'Full list of possible Hotkeys:`n<a id="KeyListHelp" href="https://www.autohotkey.com/docs/v2/KeyList.htm">https://www.autohotkey.com/docs/v2/KeyList.htm</a>')
+HotkeysHelp_Link.OnEvent("Click", Link_Click)
+; END Settings GUI
+
+Hotkey(Hotkeys_Map["HotkeyBST"], (*) => RunMacro(DropBST, "Hotkey"), "Off")
+Hotkey(Hotkeys_Map["HotkeyReload"], (*) => RunMacro(ReloadAllWeapons, "Hotkey"), "Off")
+Hotkey(Hotkeys_Map["HotkeySpamRespawn"], (*) => RunMacro(SpamRespawn, "Hotkey"), "Off")
+Hotkey(Hotkeys_Map["HotkeyTerminateGame"], (*) => RunMacro(TerminateGame, "Hotkey"), "Off")
+Hotkey(Hotkeys_Map["HotkeySuspendGame"], (*) => RunMacro(SuspendGame, "Hotkey"), "Off")
+
+MyGui.Show("w350 h240")
 
 CenterElement(MyGui, Speed_Text)
 CenterElement(MyGui, Speed_Slider)
-CenterElements(MyGui, DropBST_Button, ReloadAllWeapons_Button, SpamRespawn_Button)
-CenterElement(MyGui, ReloadAllWeapons_CheckBox)
+CenterElements(MyGui,, DropBST_Button, ReloadAllWeapons_Button, SpamRespawn_Button)
+CenterElements(MyGui,, TerminateGame_Button, SuspendGame_Button)
+CenterElement(MyGui, ReloadAllWeapons_Text)
+CenterElements(MyGui, 0, ReloadAllWeapons_Edit, ReloadAllWeapons_UpDown)
+CenterElements(MyGui, 20, Settings_Button, OpenRepo_Button, Updater_Button)
 
 ; Fixes a visual Glitch issue, using `Hidden` and then `.Visible` works too, but this is cleaner imo.
 DropBST_Button.Enabled := true
 ReloadAllWeapons_Button.Enabled := true
 SpamRespawn_Button.Enabled := true
+TerminateGame_Button.Enabled := true
+SuspendGame_Button.Enabled := true
+Settings_Button.Enabled := true
+OpenRepo_Button.Enabled := true
+Updater_Button.Enabled := true
 
-OnMessage(0x0100, On_WM_KEYDOWN)
 OnMessage(0x0200, On_WM_MOUSEMOVE)
 OnMessage(0x020A, On_WM_MOUSEWHEEL)
 
