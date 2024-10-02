@@ -32,7 +32,7 @@ GTA Macros for TRYHARD players using AutoHotkey v2.
 
 > Yes, you can! For more information, refer to the [AutoHotkey Modifier Keys](https://www.autohotkey.com/docs/v2/KeyList.htm#modifier).
 >
-> For example, the combination CTRL + F1 corresponds to: <^F1.
+> For example, the combination `CTRL+F1` corresponds to `<^F1`
 
 # Screenshots
 
