@@ -42,6 +42,7 @@ GTA Macros for TRYHARD players using AutoHotkey v2.
 # TODO
 
 - Add each of the following macros:
+  - Anti-Kick
   - Toggle Thermal Vision
   - Spam Clipboard
   - Spam Rocket
