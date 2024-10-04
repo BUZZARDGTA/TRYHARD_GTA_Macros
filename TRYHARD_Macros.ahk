@@ -6,7 +6,7 @@
 DEBUG_ENABLED := false
 
 SCRIPT_TITLE := "TRYHARD Macros"
-SCRIPT_VERSION := "v1.2.3 - 02/10/2024 (19:41)"
+SCRIPT_VERSION := "v1.2.4 - 04/10/2024 (23:45)"
 SCRIPT_REPOSITORY := "https://github.com/BUZZARDGTA/TRYHARD_GTA_Macros"
 SCRIPT_LATEST_RELEASE_URL := SCRIPT_REPOSITORY . "/releases/latest"
 SCRIPT_VERSION_UPDATER_URL := "https://raw.githubusercontent.com/BUZZARDGTA/TRYHARD_GTA_Macros/refs/heads/main/VERSION.txt"
@@ -25,23 +25,36 @@ DEFAULT_KEY_BINDING__INTERACTION_MENU := "M"
 DEFAULT_HOTKEY_BST := "F1"
 DEFAULT_HOTKEY_RELOAD := "F2"
 DEFAULT_HOTKEY_SPAMRESPAWN := "F3"
-DEFAULT_HOTKEY_TERMINATEGAME := "F4"
-DEFAULT_HOTKEY_SUSPENDGAME := "F5"
+DEFAULT_HOTKEY_THERMALVISION := "F4"
+DEFAULT_HOTKEY_SUSPENDGAME := "F11"
+DEFAULT_HOTKEY_TERMINATEGAME := "F12"
 
 TOOLTIP_DISPLAY_TIME := 250
 TOOLTIP_HIDE_TIME := 5000
 
 KEY_DELAY_SLOWEST := 100
-KEY_DELAY_FASTEST := 10
+KEY_DELAY_FASTEST := 20
 KEY_DELAY_DEFAULT := 40
+
+GUI_RESOLUTIONS := {
+    MAIN: {
+        WIDTH: 350,
+        HEIGHT: 264
+    },
+    SETTINGS: {
+        WIDTH: 350,
+        HEIGHT: 540
+    }
+}
 
 ; Globals
 Hotkeys_Map := Map(
     "HotkeyBST", DEFAULT_HOTKEY_BST,
     "HotkeyReload", DEFAULT_HOTKEY_RELOAD,
     "HotkeySpamRespawn", DEFAULT_HOTKEY_SPAMRESPAWN,
-    "HotkeyTerminateGame", DEFAULT_HOTKEY_TERMINATEGAME,
+    "HotkeyThermalVision", DEFAULT_HOTKEY_THERMALVISION,
     "HotkeySuspendGame", DEFAULT_HOTKEY_SUSPENDGAME,
+    "HotkeyTerminateGame", DEFAULT_HOTKEY_TERMINATEGAME
 )
 KeyHold := KEY_DELAY_DEFAULT
 KeyDelay := KEY_DELAY_DEFAULT
@@ -259,11 +272,18 @@ GenerateMacroSpeedText(NewSpeed) {
 }
 
 SetRunMacroDependencies(State, ForceFocus := "") {
-    SuspendGame_Button.Enabled := State
+    Speed_Slider.Enabled := State
     DropBST_Button.Enabled := State
     ReloadAllWeapons_Button.Enabled := State
     SpamRespawn_Button.Enabled := State
-    Speed_Slider.Enabled := State
+    ThermalVision_Button.Enabled := State
+    SuspendGame_Button.Enabled := State
+
+    ReloadAllWeapons_Iterate_All__Radio.Enabled := State
+    ReloadAllWeapons_Heavy_Weapon__Radio.Enabled := State
+    KeyBinding_Interaction_Menu__HotkeyEdit.Enabled := State
+    KeyBinding_Interaction_Menu__ApplyButton.Enabled := State
+    KeyBinding_Interaction_Menu__ResetButton.Enabled := State
     ReloadAllWeapons_Edit.Enabled := State
     ReloadAllWeapons_UpDown.Enabled := State
 
@@ -286,12 +306,10 @@ UpdateMacroSpeed(GuiCtrlObj, Info) {
 
     ; This fixes an issue where the user can still scroll with the default properties while a message box is displayed.
     message := ""
-    if (UpdatedSliderValue <= 10) {
+    if (UpdatedSliderValue <= 20) {
         message := "Legend said, only NASA computers can run this!"
-    } else if (UpdatedSliderValue <= 20) {
-        message := "This method is only recommended in invite-only sessions with a very limited number of players and a high-performance CPU and GPU; even then, consistent results are not even guaranteed."
     } else if (UpdatedSliderValue <= 30) {
-        message := "This method is only recommended in small lobbies, with a limited number of players, as it may not work consistently otherwise."
+        message := "This method is recommended in small lobbies, with a limited number of players, as it may not work consistently otherwise."
     }
 
     if not message == "" {
@@ -309,7 +327,7 @@ UpdateMacroSpeed(GuiCtrlObj, Info) {
 }
 
 OpenSettings(*) {
-    MySettingsGui.Show("w350 h494")
+    MySettingsGui.Show("w" . GUI_RESOLUTIONS.SETTINGS.WIDTH . "h" . GUI_RESOLUTIONS.SETTINGS.HEIGHT)
 }
 
 OpenRepo(*) {
@@ -485,10 +503,16 @@ ProcessGTAKeystrokes(triggerSource, Keystrokes) {
     }
 
     for index, Keystroke in Keystrokes {
-        ; Apply default count, hold and delay values if not provided in the Keystroke properties.
+        ; Apply default values if not provided in the Keystroke properties.
         Keystroke.count := Keystroke.HasOwnProp("count") ? Keystroke.count : 1
         Keystroke.hold := Keystroke.HasOwnProp("hold") ? Keystroke.hold : KeyHold
         Keystroke.delay := Keystroke.HasOwnProp("delay") ? Keystroke.delay : KeyDelay
+
+        if Keystroke.key == KeyBindings_Map["Interaction_Menu"] {
+            Keystroke.delay := KeyDelay * 4
+        } else if Keystroke.key == "Enter" {
+            Keystroke.delay := KeyDelay * 2
+        }
 
         loop Keystroke.count {
             if not GetValidGTAwinRunning({ hwnd: ThisGtaWindowID, AndActive: true }) {
@@ -500,9 +524,9 @@ ProcessGTAKeystrokes(triggerSource, Keystrokes) {
                 return false
             }
 
-            ; Set delay to 0 for the last Keystroke
-            if ((A_Index == Keystroke.count) and (index == Keystrokes.Length)) {
-                Keystroke.delay := 0
+            ; Forces default delay for the last Keystroke
+            if (A_Index == Keystroke.count and index == Keystrokes.Length) {
+                Keystroke.delay := KeyDelay
             }
 
             if CheckUserInputStopConditions() {
@@ -518,10 +542,10 @@ ProcessGTAKeystrokes(triggerSource, Keystrokes) {
 
 DropBST(triggerSource) {
     BST_Keystrokes := [
-        { key: KeyBindings_Map["Interaction_Menu"], delay: KeyDelay * 4 }, ; in [Interaction Menu]
-        { key: "Enter", delay: KeyDelay * 2 }, ; in [SecuroServ CEO]
+        { key: KeyBindings_Map["Interaction_Menu"] }, ; in [Interaction Menu]
+        { key: "Enter" }, ; in [SecuroServ CEO]
         { key: "Down", count: 4 }, ; hover [CEO Abilities]
-        { key: "Enter", delay: KeyDelay * 2 }, ; in [CEO Abilities]
+        { key: "Enter" }, ; in [CEO Abilities]
         { key: "Down" }, ; hover [Drop Bull Shark]
         { key: "Enter" } ; select [Drop Bull Shark]
     ]
@@ -533,16 +557,16 @@ ReloadAllWeapons(triggerSource) {
     Reload_Keystrokes := []
 
     Reload_Keystrokes.Push(
-        { key: KeyBindings_Map["Interaction_Menu"], delay: KeyDelay * 4 }, ; in [Interaction Menu]
+        { key: KeyBindings_Map["Interaction_Menu"] }, ; in [Interaction Menu]
         { key: "Down", count: 4 }, ; hover [Health and Ammo]
-        { key: "Enter", count: 2, delay: KeyDelay * 2 } ; in [Health and Ammo] and [Ammo]
+        { key: "Enter", count: 2 } ; in [Health and Ammo] and [Ammo]
     )
 
     if ReloadAllWeapons_Heavy_Weapon__Radio.Value {
         Reload_Keystrokes.Push(
-            { key: "Enter", delay: KeyDelay * 2 }, ; hover [Ammo Type < All >]
+            { key: "Enter" }, ; hover [Ammo Type < All >]
             { key: "Up" }, ; hover [Full Ammo $x]
-            { key: "Enter", delay: KeyDelay * 2 } ; select [Full Ammo $x]
+            { key: "Enter" } ; select [Full Ammo $x]
         )
     } else {
         NumOfWeaponTypesToIterate := EditReloadAllWeapons
@@ -551,7 +575,7 @@ ReloadAllWeapons(triggerSource) {
         Loop NumOfWeaponTypesToIterate {
             Reload_Keystrokes.Push(
                 { key: "Up" }, ; hover [Full Ammo $x]
-                { key: "Enter", delay: KeyDelay * 2 } ; select [Full Ammo $x]
+                { key: "Enter" } ; select [Full Ammo $x]
             )
 
             ; Only add "Down" and "Left" if it's not the last iteration
@@ -577,20 +601,19 @@ SpamRespawn(triggerSource) {
     return ProcessGTAKeystrokes(triggerSource, SpamRespawn_Keystrokes)
 }
 
-TerminateGame(triggerSource) {
-    SetRunMacroDependencies(false)
-    TerminateGame_Button.Enabled := false
-    if gtaWindowID {
-        ProcessClose(WinGetPID(gtaWindowID))
-    } else {
-        MsgBox(
-            'ERROR: Unable to find a window titled "Grand Theft Auto V" using class "grcWindow" and with process name "GTA5.exe".`n`nPlease ensure GTA V is currently running.',
-            SCRIPT_TITLE,
-            "OK Icon! " . MSGBOX_SYSTEM_MODAL
-        )
-    }
-    TerminateGame_Button.Enabled := true
-    SetRunMacroDependencies(true)
+ThermalVision(triggerSource) {
+    ThermalVision_Keystrokes := [
+        { key: KeyBindings_Map["Interaction_Menu"] }, ; in [Interaction Menu]
+        { key: "Down", count: 5 }, ; hover [Appearance]
+        { key: "Enter" }, ; select [Appearance]
+        { key: "Down" }, ; hover [Accessories]
+        { key: "Enter" }, ; select [Accessories]
+        { key: "Down", count: 4 }, ; hover [Helmets]
+        { key: "Space" }, ; select [Helmets]
+        { key: KeyBindings_Map["Interaction_Menu"] } ; exit [Interaction Menu]
+    ]
+
+    return ProcessGTAKeystrokes(triggerSource, ThermalVision_Keystrokes)
 }
 
 SuspendGame(triggerSource) {
@@ -612,23 +635,75 @@ SuspendGame(triggerSource) {
     }
 
 
+    ReturnState := false
+
     SetRunMacroDependencies(false)
-    if gtaWindowID {
-        h := OpenProcess(WinGetPID(gtaWindowID))
-        if h {
-            SuspendProcess(h)
-            Sleep(8000)
-            ResumeProcess(h)
-            CloseProcess(h)
+    TerminateGame_Button.Enabled := false
+
+    Result := MsgBox(
+        'Are you sure you want to suspend GTA V ?',
+        SCRIPT_TITLE,
+        "YesNo Iconi " . MSGBOX_SYSTEM_MODAL
+    )
+    if Result == "Yes" {
+        if gtaWindowID {
+            h := OpenProcess(WinGetPID(gtaWindowID))
+            if h {
+                SuspendProcess(h)
+                Sleep(8000)
+                ResumeProcess(h)
+                CloseProcess(h)
+            }
+            ReturnState := true
+        } else {
+            MsgBox(
+                'ERROR: Unable to find a window titled "Grand Theft Auto V" using class "grcWindow" and with process name "GTA5.exe".`n`nPlease ensure GTA V is currently running.',
+                SCRIPT_TITLE,
+                "OK Icon! " . MSGBOX_SYSTEM_MODAL
+            )
         }
     } else {
-        MsgBox(
-            'ERROR: Unable to find a window titled "Grand Theft Auto V" using class "grcWindow" and with process name "GTA5.exe".`n`nPlease ensure GTA V is currently running.',
-            SCRIPT_TITLE,
-            "OK Icon! " . MSGBOX_SYSTEM_MODAL
-        )
+        TerminateGame_Button.Enabled := true
+        SetRunMacroDependencies(true)
     }
+
+    TerminateGame_Button.Enabled := true
     SetRunMacroDependencies(true)
+
+    return ReturnState
+}
+
+TerminateGame(triggerSource) {
+    ReturnState := false
+
+    SetRunMacroDependencies(false)
+    TerminateGame_Button.Enabled := false
+
+    Result := MsgBox(
+        'Are you sure you want to terminate GTA V ?',
+        SCRIPT_TITLE,
+        "YesNo Iconi " . MSGBOX_SYSTEM_MODAL
+    )
+    if Result == "Yes" {
+        if gtaWindowID {
+            ProcessClose(WinGetPID(gtaWindowID))
+            ReturnState := true
+        } else {
+            MsgBox(
+                'ERROR: Unable to find a window titled "Grand Theft Auto V" using class "grcWindow" and with process name "GTA5.exe".`n`nPlease ensure GTA V is currently running.',
+                SCRIPT_TITLE,
+                "OK Icon! " . MSGBOX_SYSTEM_MODAL
+            )
+        }
+    } else {
+        TerminateGame_Button.Enabled := true
+        SetRunMacroDependencies(true)
+    }
+
+    TerminateGame_Button.Enabled := true
+    SetRunMacroDependencies(true)
+
+    return ReturnState
 }
 
 GetHotkeysObjects_Map(HotkeyName := "") {
@@ -663,15 +738,15 @@ GetHotkeysObjects_Map(HotkeyName := "") {
             ToggleButton: HotkeySpamRespawn_ToggleButton,
             MacroFunc: SpamRespawn
         },
-        "HotkeyTerminateGame", {
-            Hotkey: Hotkeys_Map["HotkeyTerminateGame"],
-            DefaultHotkey: DEFAULT_HOTKEY_TERMINATEGAME,
-            Button: TerminateGame_Button,
-            HotkeyEdit: HotkeyTerminateGame_HotkeyEdit,
-            ApplyButton: HotkeyTerminateGame_ApplyButton,
-            ResetButton: HotkeyTerminateGame_ResetButton,
-            ToggleButton: HotkeyTerminateGame_ToggleButton,
-            MacroFunc: TerminateGame
+        "HotkeyThermalVision", {
+            Hotkey: Hotkeys_Map["HotkeyThermalVision"],
+            DefaultHotkey: DEFAULT_HOTKEY_THERMALVISION,
+            Button: ThermalVision_Button,
+            HotkeyEdit: HotkeyThermalVision_HotkeyEdit,
+            ApplyButton: HotkeyThermalVision_ApplyButton,
+            ResetButton: HotkeyThermalVision_ResetButton,
+            ToggleButton: HotkeyThermalVision_ToggleButton,
+            MacroFunc: ThermalVision
         },
         "HotkeySuspendGame", {
             Hotkey: Hotkeys_Map["HotkeySuspendGame"],
@@ -682,6 +757,16 @@ GetHotkeysObjects_Map(HotkeyName := "") {
             ResetButton: HotkeySuspendGame_ResetButton,
             ToggleButton: HotkeySuspendGame_ToggleButton,
             MacroFunc: SuspendGame
+        },
+        "HotkeyTerminateGame", {
+            Hotkey: Hotkeys_Map["HotkeyTerminateGame"],
+            DefaultHotkey: DEFAULT_HOTKEY_TERMINATEGAME,
+            Button: TerminateGame_Button,
+            HotkeyEdit: HotkeyTerminateGame_HotkeyEdit,
+            ApplyButton: HotkeyTerminateGame_ApplyButton,
+            ResetButton: HotkeyTerminateGame_ResetButton,
+            ToggleButton: HotkeyTerminateGame_ToggleButton,
+            MacroFunc: TerminateGame
         }
     )
     if (HotkeyName != "") {
@@ -912,11 +997,11 @@ MyGui.Title := SCRIPT_TITLE
 ; Oh please do not ask me what the fuck I've done with x and y I just tried to make it works and it does.
 Speed_Text := MyGui.AddText("y+10 w108", GenerateMacroSpeedText(KEY_DELAY_DEFAULT)) ; here keeping w108 is important to keep (e.g., a 3-digit number like 100) showing up correctly.
 MyGui.AddText("xm x32 y35", "[" . KEY_DELAY_SLOWEST . "ms]")
-Speed_Slider := MyGui.AddSlider("yp y30 w200", KEY_DELAY_SLOWEST - KEY_DELAY_DEFAULT + 10)
+Speed_Slider := MyGui.AddSlider("yp y30 w200", KEY_DELAY_SLOWEST - KEY_DELAY_DEFAULT + 20)
 Speed_Slider.Opt("Invert")
 Speed_Slider.Opt("Line10")
 Speed_Slider.Opt("Page25")
-Speed_Slider.Opt("Range10-100")
+Speed_Slider.Opt("Range" . KEY_DELAY_FASTEST . "-" . KEY_DELAY_SLOWEST)
 Speed_Slider.Opt("Thick30")
 Speed_Slider.Opt("TickInterval10")
 Speed_Slider.Opt("ToolTip")
@@ -935,15 +1020,18 @@ ReloadAllWeapons_Button.ToolTip := "*You can adjust the number of weapon type it
 SpamRespawn_Button := MyGui.AddButton("Disabled x+10", "Spam Respawn*")
 SpamRespawn_Button.OnEvent("Click", (*) => RunMacro(SpamRespawn, "Button"))
 SpamRespawn_Button.ToolTip := "*Use this on the death screen after being killed to speed up your respawn time."
+ThermalVision_Button := MyGui.AddButton("Disabled x10", "Thermal Vision*")
+ThermalVision_Button.OnEvent("Click", (*) => RunMacro(ThermalVision, "Button"))
+ThermalVision_Button.ToolTip := "*Toogles your Thermal Vision ON/OFF.`nYou must wear a thermal helmet with the visor in the down position.`n`nPlease note that there is a game bug where the helmet doesn't appear in the 'Interaction Menu' > 'Accessories'.`nYou will need to resolve this issue on your own."
 
 MyGui.AddText("x10")
 
-TerminateGame_Button := MyGui.AddButton("Disabled", "Terminate Game*")
-TerminateGame_Button.OnEvent("Click", (*) => RunMacro(TerminateGame, "Button"))
-TerminateGame_Button.ToolTip := "*You can use this to select the Casino Lucky Wheel slot you want.`nIf it doesn't match your choice, close the game and try again as many times as needed."
-SuspendGame_Button := MyGui.AddButton("Disabled x+0", "Suspend Game*")
+SuspendGame_Button := MyGui.AddButton("Disabled", "Suspend Game*")
 SuspendGame_Button.OnEvent("Click", (*) => RunMacro(SuspendGame, "Button"))
 SuspendGame_Button.ToolTip := "*You can use this to force yourself into a solo public session.`nThis is especially useful when making risky sales in public lobbies."
+TerminateGame_Button := MyGui.AddButton("Disabled x+0", "Terminate Game*")
+TerminateGame_Button.OnEvent("Click", (*) => RunMacro(TerminateGame, "Button"))
+TerminateGame_Button.ToolTip := "*You can use this to select the Casino Lucky Wheel slot you want.`nIf it doesn't match your choice, close the game and try again as many times as needed."
 
 AddSeparator(MyGui, {text1: "x10"})
 
@@ -1035,6 +1123,29 @@ HotkeySpamRespawn_ResetButton := MySettingsGui.AddButton("w66 x+10", "Reset")
 HotkeySpamRespawn_ResetButton.OnEvent("Click", (*) => ResetHotkey("HotkeySpamRespawn"))
 HotkeySpamRespawn_ToggleButton := MySettingsGui.AddButton("w66 x+10", "Disable")
 HotkeySpamRespawn_ToggleButton.OnEvent("Click", (*) => ToggleHotkey("HotkeySpamRespawn"))
+MySettingsGui.AddText("x10", 'Hotkey for "Thermal Vision" :')
+HotkeyThermalVision_HotkeyEdit := MySettingsGui.AddEdit("w100 Limit17", DEFAULT_HOTKEY_THERMALVISION)
+HotkeyThermalVision_HotkeyEdit.OnEvent("Focus", (*) => OnEdit_Focus(HotkeyThermalVision_ApplyButton))
+HotkeyThermalVision_HotkeyEdit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(HotkeyThermalVision_HotkeyEdit, HotkeyThermalVision_ApplyButton, Hotkeys_Map["HotkeyThermalVision"]))
+HotkeyThermalVision_ApplyButton := MySettingsGui.AddButton("w66 x+10", "Apply")
+HotkeyThermalVision_ApplyButton.OnEvent("Click", (*) => ApplyHotkey("HotkeyThermalVision"))
+HotkeyThermalVision_ResetButton := MySettingsGui.AddButton("w66 x+10", "Reset")
+HotkeyThermalVision_ResetButton.OnEvent("Click", (*) => ResetHotkey("HotkeyThermalVision"))
+HotkeyThermalVision_ToggleButton := MySettingsGui.AddButton("w66 x+10", "Disable")
+HotkeyThermalVision_ToggleButton.OnEvent("Click", (*) => ToggleHotkey("HotkeyThermalVision"))
+MySettingsGui.AddText("x10", 'Hotkey for "Suspend Game" :')
+HotkeySuspendGame_HotkeyEdit := MySettingsGui.AddEdit("w100 Limit17", DEFAULT_HOTKEY_SUSPENDGAME)
+HotkeySuspendGame_HotkeyEdit.OnEvent("Focus", (*) => OnEdit_Focus(HotkeySuspendGame_ApplyButton))
+HotkeySuspendGame_HotkeyEdit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(HotkeySuspendGame_HotkeyEdit, HotkeySuspendGame_ApplyButton, Hotkeys_Map["HotkeySuspendGame"]))
+HotkeySuspendGame_HotkeyEdit.Enabled := false
+HotkeySuspendGame_ApplyButton := MySettingsGui.AddButton("w66 x+10", "Apply")
+HotkeySuspendGame_ApplyButton.OnEvent("Click", (*) => ApplyHotkey("HotkeySuspendGame"))
+HotkeySuspendGame_ApplyButton.Enabled := false
+HotkeySuspendGame_ResetButton := MySettingsGui.AddButton("w66 x+10", "Reset")
+HotkeySuspendGame_ResetButton.OnEvent("Click", (*) => ResetHotkey("HotkeySuspendGame"))
+HotkeySuspendGame_ResetButton.Enabled := false
+HotkeySuspendGame_ToggleButton := MySettingsGui.AddButton("w66 x+10", "Enable")
+HotkeySuspendGame_ToggleButton.OnEvent("Click", (*) => ToggleHotkey("HotkeySuspendGame"))
 MySettingsGui.AddText("x10", 'Hotkey for "Terminate Game" :')
 HotkeyTerminateGame_HotkeyEdit := MySettingsGui.AddEdit("w100 Limit17", DEFAULT_HOTKEY_TERMINATEGAME)
 HotkeyTerminateGame_HotkeyEdit.OnEvent("Focus", (*) => OnEdit_Focus(HotkeyTerminateGame_ApplyButton))
@@ -1048,20 +1159,6 @@ HotkeyTerminateGame_ResetButton.OnEvent("Click", (*) => ResetHotkey("HotkeyTermi
 HotkeyTerminateGame_ResetButton.Enabled := false
 HotkeyTerminateGame_ToggleButton := MySettingsGui.AddButton("w66 x+10", "Enable")
 HotkeyTerminateGame_ToggleButton.OnEvent("Click", (*) => ToggleHotkey("HotkeyTerminateGame"))
-MySettingsGui.AddText("x10", 'Hotkey for "Suspend Game" :')
-HotkeySuspendGame_HotkeyEdit := MySettingsGui.AddEdit("w100 Limit17", DEFAULT_HOTKEY_SUSPENDGAME)
-HotkeySuspendGame_HotkeyEdit.OnEvent("Focus", (*) => OnEdit_Focus(HotkeySpamRespawn_ApplyButton))
-HotkeySuspendGame_HotkeyEdit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(HotkeySuspendGame_HotkeyEdit, HotkeySpamRespawn_ApplyButton, Hotkeys_Map["HotkeySuspendGame"]))
-HotkeySuspendGame_HotkeyEdit.Enabled := false
-HotkeySuspendGame_ApplyButton := MySettingsGui.AddButton("w66 x+10", "Apply")
-HotkeySuspendGame_ApplyButton.OnEvent("Click", (*) => ApplyHotkey("HotkeySuspendGame"))
-HotkeySuspendGame_ApplyButton.Enabled := false
-HotkeySuspendGame_ResetButton := MySettingsGui.AddButton("w66 x+10", "Reset")
-HotkeySuspendGame_ResetButton.OnEvent("Click", (*) => ResetHotkey("HotkeySuspendGame"))
-HotkeySuspendGame_ResetButton.Enabled := false
-HotkeySuspendGame_ToggleButton := MySettingsGui.AddButton("w66 x+10", "Enable")
-HotkeySuspendGame_ToggleButton.OnEvent("Click", (*) => ToggleHotkey("HotkeySuspendGame"))
-
 HotkeysHelp_Link := MySettingsGui.AddLink("x10", 'Full list of possible Hotkeys:`n<a id="KeyListHelp" href="https://www.autohotkey.com/docs/v2/KeyList.htm">https://www.autohotkey.com/docs/v2/KeyList.htm</a>')
 HotkeysHelp_Link.OnEvent("Click", Link_Click)
 ; END Settings GUI
@@ -1069,25 +1166,29 @@ HotkeysHelp_Link.OnEvent("Click", Link_Click)
 Hotkey(Hotkeys_Map["HotkeyBST"], (*) => RunMacro(DropBST, "Hotkey"), "Off")
 Hotkey(Hotkeys_Map["HotkeyReload"], (*) => RunMacro(ReloadAllWeapons, "Hotkey"), "Off")
 Hotkey(Hotkeys_Map["HotkeySpamRespawn"], (*) => RunMacro(SpamRespawn, "Hotkey"), "Off")
-Hotkey(Hotkeys_Map["HotkeyTerminateGame"], (*) => RunMacro(TerminateGame, "Hotkey"), "Off")
+Hotkey(Hotkeys_Map["HotkeyThermalVision"], (*) => RunMacro(ThermalVision, "Hotkey"), "Off")
 Hotkey(Hotkeys_Map["HotkeySuspendGame"], (*) => RunMacro(SuspendGame, "Hotkey"), "Off")
+Hotkey(Hotkeys_Map["HotkeyTerminateGame"], (*) => RunMacro(TerminateGame, "Hotkey"), "Off")
 
-MyGui.Show("w350 h240")
+MyGui.Show("w" . GUI_RESOLUTIONS.MAIN.WIDTH . "h" . GUI_RESOLUTIONS.MAIN.HEIGHT)
 
 CenterElement(MyGui, Speed_Text)
 CenterElement(MyGui, Speed_Slider)
 CenterElements(MyGui,, DropBST_Button, ReloadAllWeapons_Button, SpamRespawn_Button)
-CenterElements(MyGui,, TerminateGame_Button, SuspendGame_Button)
-CenterElement(MyGui, ReloadAllWeapons_Text)
+CenterElement(MyGui, ThermalVision_Button)
+CenterElements(MyGui,, SuspendGame_Button, TerminateGame_Button)
 CenterElements(MyGui, 0, ReloadAllWeapons_Edit, ReloadAllWeapons_UpDown)
 CenterElements(MyGui, 20, Settings_Button, OpenRepo_Button, Updater_Button)
+
+CenterElement(MyGui, ReloadAllWeapons_Text)
 
 ; Fixes a visual Glitch issue, using `Hidden` and then `.Visible` works too, but this is cleaner imo.
 DropBST_Button.Enabled := true
 ReloadAllWeapons_Button.Enabled := true
 SpamRespawn_Button.Enabled := true
-TerminateGame_Button.Enabled := true
+ThermalVision_Button.Enabled := true
 SuspendGame_Button.Enabled := true
+TerminateGame_Button.Enabled := true
 Settings_Button.Enabled := true
 OpenRepo_Button.Enabled := true
 Updater_Button.Enabled := true
