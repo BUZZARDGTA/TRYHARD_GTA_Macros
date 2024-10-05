@@ -49,7 +49,6 @@ GTA Macros for TRYHARD players using AutoHotkey v2.
 - Load/Save `Settings.ini` file
 - Add each of the following macros:
   - Anti-Kick
-  - Toggle Thermal Vision
   - Spam Clipboard
   - Spam Rocket
   - Spam Sniper

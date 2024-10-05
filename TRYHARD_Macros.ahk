@@ -6,7 +6,7 @@
 DEBUG_ENABLED := false
 
 SCRIPT_TITLE := "TRYHARD Macros"
-SCRIPT_VERSION := "v1.2.4 - 04/10/2024 (23:45)"
+SCRIPT_VERSION := "v1.2.5 - 05/10/2024 (02:38)"
 SCRIPT_REPOSITORY := "https://github.com/BUZZARDGTA/TRYHARD_GTA_Macros"
 SCRIPT_LATEST_RELEASE_URL := SCRIPT_REPOSITORY . "/releases/latest"
 SCRIPT_VERSION_UPDATER_URL := "https://raw.githubusercontent.com/BUZZARDGTA/TRYHARD_GTA_Macros/refs/heads/main/VERSION.txt"
@@ -43,7 +43,11 @@ GUI_RESOLUTIONS := {
     },
     SETTINGS: {
         WIDTH: 350,
-        HEIGHT: 540
+        HEIGHT: 492
+    },
+    RELOAD_SETTINGS: {
+        WIDTH: 350,
+        HEIGHT: 84
     }
 }
 
@@ -59,6 +63,8 @@ Hotkeys_Map := Map(
 KeyHold := KEY_DELAY_DEFAULT
 KeyDelay := KEY_DELAY_DEFAULT
 IsMacroRunning := false
+HasDisplayedMacroSpeedWarning1 := false
+HasDisplayedMacroSpeedWarning2 := false
 gtaWindowID := 0
 EditReloadAllWeapons := DEFAULT_EDIT_RELOAD_All_WEAPONS
 KeyBindings_Map := Map(
@@ -144,28 +150,6 @@ On_WM_MOUSEMOVE(wParam, lParam, msg, Hwnd) {
     }
 }
 
-On_WM_MOUSEWHEEL(wParam, lParam, msg, Hwnd) {
-    static GET_WHEEL_DELTA_WPARAM(wParam) => (
-        ; Credit: https://github.com/Seven0528/ScrollableGui
-        wParam<<32>>48
-    )
-
-    ; Get the cursor position (to check if it's over the slider)
-    MouseGetPos(,,, &ControlHwnd, 2)
-
-    ; Check if the mouse is over the slider
-    if ((Speed_Slider.Enabled == true) and (ControlHwnd = Speed_Slider.Hwnd)) {
-        delta := GET_WHEEL_DELTA_WPARAM(wParam) ; Get scroll direction (up or down)
-
-        ; Adjust the slider value based on scroll direction
-        if (delta == 120) { ; Scrolled up
-            Speed_Slider.Value := Speed_Slider.Value - 10
-        } else if (delta == -120) { ; Scrolled down
-            Speed_Slider.Value := Speed_Slider.Value + 10
-        }
-    }
-}
-
 Link_Click(Ctrl, ID, HREF) {
     Run(HREF)
 }
@@ -200,14 +184,6 @@ Print(str) {
     if DEBUG_ENABLED {
         OutputDebug("[" . A_ScriptName . "]: " . str)
     }
-}
-
-ShowGui(gui) {
-    gui.Show()
-}
-
-HideGui(gui) {
-    gui.Hide()
 }
 
 AddSeparator(gui, Options := {}) {
@@ -293,23 +269,27 @@ SetRunMacroDependencies(State, ForceFocus := "") {
 }
 
 UpdateMacroSpeed(GuiCtrlObj, Info) {
-    static RoundToNearestTen(value) {
-        return Round(value / 10) * 10
-    }
+    global HasDisplayedMacroSpeedWarning1, HasDisplayedMacroSpeedWarning2, KeyDelay, KeyHold
 
-    global KeyDelay, KeyHold
-
-    UpdatedSliderValue := RoundToNearestTen(GuiCtrlObj.Value)
-    GuiCtrlObj.Value := UpdatedSliderValue
-    ; Whenver it's 3 of len (ex: 100) it breaks, this bug drives me crazy
+    UpdatedSliderValue := GuiCtrlObj.Value
     Speed_Text.Value := GenerateMacroSpeedText(UpdatedSliderValue)
-
-    ; This fixes an issue where the user can still scroll with the default properties while a message box is displayed.
     message := ""
-    if (UpdatedSliderValue <= 20) {
-        message := "Legend said, only NASA computers can run this!"
-    } else if (UpdatedSliderValue <= 30) {
-        message := "This method is recommended in small lobbies, with a limited number of players, as it may not work consistently otherwise."
+
+    if UpdatedSliderValue <= 20 {
+        if not HasDisplayedMacroSpeedWarning2 {
+            message := "Legend said, only NASA computers can run this!"
+            HasDisplayedMacroSpeedWarning2 := true
+            HasDisplayedMacroSpeedWarning1 := true
+        }
+    } else if UpdatedSliderValue <= 30 {
+        if not HasDisplayedMacroSpeedWarning1 {
+            message := "These minimal speeds are recommended in small lobbies, with a limited number of players, as it may not work consistently otherwise."
+            HasDisplayedMacroSpeedWarning1 := true
+        }
+        HasDisplayedMacroSpeedWarning2 := false
+    } else {
+        HasDisplayedMacroSpeedWarning1 := false
+        HasDisplayedMacroSpeedWarning2 := false
     }
 
     if not message == "" {
@@ -390,14 +370,6 @@ RunUpdater(Source) {
     }
 }
 
-; Define a function to send key press, hold, and release
-SendKeyWithDelay(key, holdTime, releaseTime) {
-    Send("{" key " down}")
-    Sleep(holdTime)
-    Send("{" key " up}")
-    Sleep(releaseTime)
-}
-
 GetValidGTAwinRunning(Options := {}) {
     ; Get the HWND of the first window matching GTA_WINDOW_IDENTIFIER or uses the one supplied from user.
     gtaWindowID := Options.HasOwnProp("hwnd") ? Options.hwnd : ""
@@ -450,6 +422,13 @@ RunMacro(macroFunc, triggerSource) {
 
 
     return result
+}
+
+SendKeyWithDelay(key, holdTime, releaseTime) {
+    Send("{" key " down}")
+    Sleep(holdTime)
+    Send("{" key " up}")
+    Sleep(releaseTime)
 }
 
 /*
@@ -508,12 +487,6 @@ ProcessGTAKeystrokes(triggerSource, Keystrokes) {
         Keystroke.hold := Keystroke.HasOwnProp("hold") ? Keystroke.hold : KeyHold
         Keystroke.delay := Keystroke.HasOwnProp("delay") ? Keystroke.delay : KeyDelay
 
-        if Keystroke.key == KeyBindings_Map["Interaction_Menu"] {
-            Keystroke.delay := KeyDelay * 4
-        } else if Keystroke.key == "Enter" {
-            Keystroke.delay := KeyDelay * 2
-        }
-
         loop Keystroke.count {
             if not GetValidGTAwinRunning({ hwnd: ThisGtaWindowID, AndActive: true }) {
                 MsgBox(
@@ -524,9 +497,9 @@ ProcessGTAKeystrokes(triggerSource, Keystrokes) {
                 return false
             }
 
-            ; Forces default delay for the last Keystroke
+            ; Set delay to 0 for the last Keystroke
             if (A_Index == Keystroke.count and index == Keystrokes.Length) {
-                Keystroke.delay := KeyDelay
+                Keystroke.delay := 0
             }
 
             if CheckUserInputStopConditions() {
@@ -554,6 +527,13 @@ DropBST(triggerSource) {
 }
 
 ReloadAllWeapons(triggerSource) {
+    direction := ""
+    if ReloadAllWeapons_Iterate_All__Direction__Radio__Right.Value == 1 {
+        direction := "Right"
+    } else {
+        direction := "Left"
+    }
+
     Reload_Keystrokes := []
 
     Reload_Keystrokes.Push(
@@ -562,7 +542,7 @@ ReloadAllWeapons(triggerSource) {
         { key: "Enter", count: 2 } ; in [Health and Ammo] and [Ammo]
     )
 
-    if ReloadAllWeapons_Heavy_Weapon__Radio.Value {
+    if ReloadAllWeapons_Heavy_Weapon__Radio.Value == 1 {
         Reload_Keystrokes.Push(
             { key: "Enter" }, ; hover [Ammo Type < All >]
             { key: "Up" }, ; hover [Full Ammo $x]
@@ -582,7 +562,7 @@ ReloadAllWeapons(triggerSource) {
             if (A_Index < NumOfWeaponTypesToIterate) {
                 Reload_Keystrokes.Push(
                     { key: "Down" }, ; hover [Ammo Type < x >]
-                    { key: "Left" } ; hover [Ammo Type < y >]
+                    { key: direction } ; hover [Ammo Type < y >]
                 )
             }
         }
@@ -904,49 +884,12 @@ OnEdit_LoseFocus(EditField, ApplyButton, FallbackValue) {
     ApplyButton.Opt("-Default")
 }
 
-UpdateTrayMenuShowHideOptionState(MyGui) {
-    if WinExist(SCRIPT_WINDOW_IDENTIFIER) {
-        ItemName := "Hide"
-        ActionFunc := (*) => HideGui(MyGui)
-        RenameFrom := "Show"
-    } else {
-        ItemName := "Show"
-        ActionFunc := (*) => ShowGui(MyGui)
-        RenameFrom := "Hide"
-    }
-
-    try {
-        A_TrayMenu.Rename(RenameFrom, ItemName)
-    } catch error as err {
-        if not ((err.What == "Menu.Prototype.Rename") and (err.Message == "Nonexistent menu item.")) {
-            throw err
-        }
-    } else {
-        A_TrayMenu.Add(ItemName, ActionFunc)
-    } finally {
-        A_TrayMenu.Default := ItemName
-    }
+ReloadAllWeapons_Radio1_Click__Callback(*) {
+    ReloadSettings_Button.Enabled := true
 }
-
-IsGTARunning_Callback() {
-    global gtaWindowID
-
-    gtaWindowID := GetValidGTAwinRunning()
-
-    for HotkeyName, Data in GetHotkeysObjects_Map() {
-        ToggleButton := Data.ToggleButton
-        _Hotkey := Data.Hotkey
-
-        if (ToggleButton.Text == "Disable") {
-            try {
-                Hotkey(_Hotkey, (gtaWindowID and WinActive(gtaWindowID)) ? "On" : "Off")
-            } catch error as err {
-                if not ((err.What == "Hotkey") and (err.Message == "Nonexistent hotkey.")) {
-                    throw err
-                }
-            }
-        }
-    }
+ReloadAllWeapons_Radio2_Click__Callback(*) {
+    MyReloadSettingsGui.Hide()
+    ReloadSettings_Button.Enabled := false
 }
 
 ReloadAllWeapons_Edit__DisplayErrorAndReset(GuiCtrlObj) {
@@ -988,6 +931,54 @@ ReloadAllWeapons_Edit_LoseFocus__Callback(GuiCtrlObj, Info) {
     return true
 }
 
+MainLoop() {
+    ; START UpdateTrayMenuShowHideOptionState
+    if WinExist(SCRIPT_WINDOW_IDENTIFIER) {
+        ItemName := "Hide"
+        ActionFunc := (*) => MyGui.Hide()
+        RenameFrom := "Show"
+    } else {
+        ItemName := "Show"
+        ActionFunc := (*) => MyGui.Show()
+        RenameFrom := "Hide"
+    }
+
+    try {
+        A_TrayMenu.Rename(RenameFrom, ItemName)
+    } catch error as err {
+        if not (err.What == "Menu.Prototype.Rename" and err.Message == "Nonexistent menu item.") {
+            throw err
+        }
+    } else {
+        A_TrayMenu.Add(ItemName, ActionFunc)
+    } finally {
+        A_TrayMenu.Default := ItemName
+    }
+    ; END UpdateTrayMenuShowHideOptionState
+
+    ; START IsGTARunning_Callback
+    ; Only enable Hotkeys when the GTA_WINDOW_IDENTIFIER conditions are found.
+    global gtaWindowID
+
+    gtaWindowID := GetValidGTAwinRunning()
+
+    for HotkeyName, Data in GetHotkeysObjects_Map() {
+        ToggleButton := Data.ToggleButton
+        _Hotkey := Data.Hotkey
+
+        if (ToggleButton.Text == "Disable") {
+            try {
+                Hotkey(_Hotkey, (gtaWindowID and WinActive(gtaWindowID)) ? "On" : "Off")
+            } catch error as err {
+                if not ((err.What == "Hotkey") and (err.Message == "Nonexistent hotkey.")) {
+                    throw err
+                }
+            }
+        }
+    }
+    ; END IsGTARunning_Callback
+}
+
 
 ; Start Main GUI
 MyGui := Gui()
@@ -999,11 +990,11 @@ Speed_Text := MyGui.AddText("y+10 w108", GenerateMacroSpeedText(KEY_DELAY_DEFAUL
 MyGui.AddText("xm x32 y35", "[" . KEY_DELAY_SLOWEST . "ms]")
 Speed_Slider := MyGui.AddSlider("yp y30 w200", KEY_DELAY_SLOWEST - KEY_DELAY_DEFAULT + 20)
 Speed_Slider.Opt("Invert")
-Speed_Slider.Opt("Line10")
-Speed_Slider.Opt("Page25")
+Speed_Slider.Opt("Line5")
+Speed_Slider.Opt("Page10")
 Speed_Slider.Opt("Range" . KEY_DELAY_FASTEST . "-" . KEY_DELAY_SLOWEST)
 Speed_Slider.Opt("Thick30")
-Speed_Slider.Opt("TickInterval10")
+Speed_Slider.Opt("TickInterval5")
 Speed_Slider.Opt("ToolTip")
 Speed_Slider.OnEvent("Change", UpdateMacroSpeed)
 MyGui.AddText("yp y35", "[" . KEY_DELAY_FASTEST . "ms]")
@@ -1022,7 +1013,7 @@ SpamRespawn_Button.OnEvent("Click", (*) => RunMacro(SpamRespawn, "Button"))
 SpamRespawn_Button.ToolTip := "*Use this on the death screen after being killed to speed up your respawn time."
 ThermalVision_Button := MyGui.AddButton("Disabled x10", "Thermal Vision*")
 ThermalVision_Button.OnEvent("Click", (*) => RunMacro(ThermalVision, "Button"))
-ThermalVision_Button.ToolTip := "*Toogles your Thermal Vision ON/OFF.`nYou must wear a thermal helmet with the visor in the down position.`n`nPlease note that there is a game bug where the helmet doesn't appear in the 'Interaction Menu' > 'Accessories'.`nYou will need to resolve this issue on your own."
+ThermalVision_Button.ToolTip := "*Toogles your Combat Helmet, Thermal Vision ON/OFF.`nYou must wear a Thermal Vision Combat Helmet (Dual/Quad Lens) with the Visor in the down position.`n`nPlease note that there is a game bug where the helmet doesn't appear in the 'Interaction Menu' > 'Accessories'.`nYou will need to resolve this issue on your own."
 
 MyGui.AddText("x10")
 
@@ -1050,13 +1041,32 @@ MySettingsGui := Gui()
 MySettingsGui.Opt("+AlwaysOnTop")
 MySettingsGui.Title := SETTINGS_SCRIPT_TITLE
 
-ReloadAllWeapons_Iterate_All__Radio := MySettingsGui.AddRadio("Checked", " Reload All Weapons (Method: Iterate All)")
-ReloadAllWeapons_Heavy_Weapon__Radio := MySettingsGui.AddRadio(, " Reload All Weapons (Method: Heavy Weapon)")
-ReloadAllWeapons_Text := MySettingsGui.AddText("y50", 'Number of iterations for "Reload All Weapons" (Method: Iterate All) :')
-ReloadAllWeapons_Edit := MySettingsGui.AddEdit("w40")
+
+MyReloadSettingsGui := Gui()
+MyReloadSettingsGui.Opt("+AlwaysOnTop")
+MyReloadSettingsGui.Title := SETTINGS_SCRIPT_TITLE
+
+
+MyReloadSettingsGui.AddText("x100", "Direction: ")
+ReloadAllWeapons_Iterate_All__Direction__Radio__Left := MyReloadSettingsGui.AddRadio("x+10 Checked", " Left")
+ReloadAllWeapons_Iterate_All__Direction__Radio__Right := MyReloadSettingsGui.AddRadio("x+5", " Right")
+
+ReloadAllWeapons_Text := MyReloadSettingsGui.AddText("x10 y+16", 'Number of iterations:')
+ReloadAllWeapons_Edit := MyReloadSettingsGui.AddEdit("w40")
 ReloadAllWeapons_Edit.OnEvent("Change", ReloadAllWeapons_Edit_Change__Callback)
 ReloadAllWeapons_Edit.OnEvent("LoseFocus", ReloadAllWeapons_Edit_LoseFocus__Callback)
-ReloadAllWeapons_UpDown := MySettingsGui.AddUpDown("Range1-10", DEFAULT_EDIT_RELOAD_All_WEAPONS)
+ReloadAllWeapons_UpDown := MyReloadSettingsGui.AddUpDown("Range1-10", DEFAULT_EDIT_RELOAD_All_WEAPONS)
+
+
+ReloadAllWeapons_Iterate_All__Radio := MySettingsGui.AddRadio("x50 y10 Checked", " Reload All Weapons (Method: Iterate)")
+ReloadAllWeapons_Iterate_All__Radio.OnEvent("Click", ReloadAllWeapons_Radio1_Click__Callback)
+ReloadAllWeapons_Heavy_Weapon__Radio := MySettingsGui.AddRadio("x50", " Reload All Weapons (Method: Heavy Weapon)")
+ReloadAllWeapons_Heavy_Weapon__Radio.OnEvent("Click", ReloadAllWeapons_Radio2_Click__Callback)
+
+MySettingsGui.SetFont("s11")
+ReloadSettings_Button := MySettingsGui.AddButton("x254 y6 w22 h22", "⚙")
+ReloadSettings_Button.OnEvent("Click", (*) => MyReloadSettingsGui.Show("w" . GUI_RESOLUTIONS.RELOAD_SETTINGS.WIDTH . "h" . GUI_RESOLUTIONS.RELOAD_SETTINGS.HEIGHT))
+MySettingsGui.SetFont()
 
 AddSeparator(MySettingsGui, {text1: "x10"})
 
@@ -1194,18 +1204,16 @@ OpenRepo_Button.Enabled := true
 Updater_Button.Enabled := true
 
 OnMessage(0x0200, On_WM_MOUSEMOVE)
-OnMessage(0x020A, On_WM_MOUSEWHEEL)
 
-A_TrayMenu.Insert("1&", "Hide", (*) => HideGui(MyGui))
+A_TrayMenu.Insert("1&", "Hide", (*) => MyGui.Hide())
 A_TrayMenu.Insert("2&")
 
 RunUpdater("STARTUP")
 
-SetTimer(() => UpdateTrayMenuShowHideOptionState(MyGui), 100)
-
 /*
 HotIfWinActive(GTA_WINDOW_IDENTIFIER)
 Known-Bug: After restarting the game this method ain't working anymore.
-So I fixed it by implementing my own one just below.
+So I fixed it by implementing my own one in the MainLoop just bellow.
 */
-SetTimer(IsGTARunning_Callback, 100) ; Only enable Hotkeys when the GTA_WINDOW_IDENTIFIER conditions are found.
+
+SetTimer(MainLoop, 100)
