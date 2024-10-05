@@ -23,6 +23,8 @@ Macros for TRYHARD players using AutoHotkey v2.
 > Ensure you are in a CEO Organization.
 >
 > There is a known bug in GTA:O where "Drop Bull Shark" says "You have hit the drop limit for this item."
+>
+> There is a known bug in GTA:O where "SecuroServ CEO" says "SecuroServ is currently unavailable. Please try again later."
 
 ### "Reload All Weapons" is not working
 
