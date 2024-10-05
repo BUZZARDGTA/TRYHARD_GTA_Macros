@@ -2,6 +2,12 @@
 
 GTA Macros for TRYHARD players using AutoHotkey v2.
 
+# Screenshots
+
+| Main                                                                                     | Settings                                                                                     |
+| ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| ![Main](https://github.com/user-attachments/assets/5922e71c-1ed7-4c45-8b9b-b22eb2264cb5) | ![Settings](https://github.com/user-attachments/assets/dcd5b382-726b-4d21-9b0d-9a8cddce3f5c) |
+
 # FAQ
 
 ### Is it detected?
@@ -38,12 +44,6 @@ GTA Macros for TRYHARD players using AutoHotkey v2.
 > Yes, you can! For more information, refer to the [AutoHotkey Modifier Keys](https://www.autohotkey.com/docs/v2/KeyList.htm#modifier).
 >
 > For example, the combination `CTRL+F1` corresponds to `<^F1`
-
-# Screenshots
-
-| Main | Settings |
-| --------- | ---------- |
-| ![Main](https://github.com/user-attachments/assets/5922e71c-1ed7-4c45-8b9b-b22eb2264cb5) | ![Settings](https://github.com/user-attachments/assets/dcd5b382-726b-4d21-9b0d-9a8cddce3f5c) |
 
 # Known Bug (unlikely to be fixed)
 
