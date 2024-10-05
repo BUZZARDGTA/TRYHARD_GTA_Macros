@@ -28,6 +28,10 @@ Macros for TRYHARD players using AutoHotkey v2.
 
 > There is a known bug in GTA:O where "Full Ammo" says "You are unable to purchase ammo at this time."
 
+### "Thermal Vision" is not working
+
+> There is a known bug in GTA:O where your Quad/Dual Lens Combat Helmet doesn't appear in "Interaction Menu" > "Accessories" > "Helmets" even though you're wearing it.
+
 ### "Reload All Weapons" / "Thermal Vision" sometimes fails
 
 > If you are NOT in a CEO/MC, there is a known bug in GTA:O where "Register as a Boss" may sometimes randomly be hidden from the Interaction Menu.<br>
