@@ -38,7 +38,7 @@ GTA Macros for TRYHARD players using AutoHotkey v2.
 
 | Main | Settings |
 | --------- | ---------- |
-| ![Main](https://github.com/user-attachments/assets/b456bb55-3eb7-4ba7-b705-cf9f59d2ea0a) | ![Settings](https://github.com/user-attachments/assets/332f415e-0727-4a34-906b-89f9aced53dc) |
+| ![Main](https://github.com/user-attachments/assets/5922e71c-1ed7-4c45-8b9b-b22eb2264cb5) | ![Settings](https://github.com/user-attachments/assets/dcd5b382-726b-4d21-9b0d-9a8cddce3f5c) |
 
 # Known Bug (unlikely to be fixed)
 
