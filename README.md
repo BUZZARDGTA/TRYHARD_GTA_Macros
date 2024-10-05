@@ -30,7 +30,7 @@ Macros for TRYHARD players using AutoHotkey v2.
 
 ### "Thermal Vision" is not working
 
-> There is a known bug in GTA:O where your Quad/Dual Lens Combat Helmet doesn't appear in "Interaction Menu" > "Accessories" > "Helmets" even though you're wearing it.
+> There is a known bug in GTA:O where your Dual/Quad Lens Combat Helmet doesn't appear in "Interaction Menu" > "Accessories" > "Helmets" even though you're wearing it.
 
 ### "Reload All Weapons" / "Thermal Vision" sometimes fails
 
