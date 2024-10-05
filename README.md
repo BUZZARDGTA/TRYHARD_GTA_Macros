@@ -16,11 +16,11 @@ GTA Macros for TRYHARD players using AutoHotkey v2.
 
 > Ensure you are in a CEO Organization.
 
-### "Reload All Weapons" sometimes fails
+### "Reload All Weapons" / "Thermal Vision" sometimes fails
 
-> Ensure that either "Register as a Boss" or "SecuroServ CEO" appears in your interaction menu.
+> If you are not in a CEO/MC, there is a known bug in GTA:O where "Register as a Boss" may sometimes randomly be hidden from the Interaction Menu.
 >
-> There is a known bug in GTA:O where "Register as a Boss" may sometimes randomly be hidden from the menu.
+> I highly recommend using the "Reload All Weapons" macro only when you're in a CEO/MC, as using it outside may change your character's appearance and result in being disconnected from the session.
 
 ### Macros are not working consistently
 
