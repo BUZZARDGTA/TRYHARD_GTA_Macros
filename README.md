@@ -35,14 +35,12 @@ GTA Macros for TRYHARD players using AutoHotkey v2.
 
 ### Macros are not working consistently
 
-> Try selecting a slower "Macro Speed".
->
+> Try selecting a slower "Macro Speed".<br>
 > Your computer's specs or a generally slow session might be affecting the macro's consistency.
 
 ### Can we use Hotkey Combinations?
 
-> Yes, you can! For more information, refer to the [AutoHotkey Modifier Keys](https://www.autohotkey.com/docs/v2/KeyList.htm#modifier).
->
+> Yes, you can! For more information, refer to the [AutoHotkey Modifier Keys](https://www.autohotkey.com/docs/v2/KeyList.htm#modifier).<br>
 > For example, the combination `CTRL+F1` corresponds to `<^F1`
 
 # Known Bug (unlikely to be fixed)
