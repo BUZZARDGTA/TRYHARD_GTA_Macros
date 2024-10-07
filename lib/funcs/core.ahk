@@ -1,205 +1,22 @@
-#Requires AutoHotkey v2.0
-#SingleInstance Force
+﻿/*
+    core.ahk
+    These are custom functions used throughout the script.
+*/
 
-
-; Constants
-DEBUG_ENABLED := false
-
-SCRIPT_TITLE := "TRYHARD Macros"
-SCRIPT_VERSION := "v1.2.5 - 05/10/2024 (02:38)"
-SCRIPT_REPOSITORY := "https://github.com/BUZZARDGTA/TRYHARD_GTA_Macros"
-SCRIPT_LATEST_RELEASE_URL := SCRIPT_REPOSITORY . "/releases/latest"
-SCRIPT_VERSION_UPDATER_URL := "https://raw.githubusercontent.com/BUZZARDGTA/TRYHARD_GTA_Macros/refs/heads/main/VERSION.txt"
-SCRIPT_WINDOW_IDENTIFIER := SCRIPT_TITLE . " ahk_class " . "AutoHotkeyGUI" . " ahk_pid " . WinGetPID(A_ScriptHwnd)
-UPDATER_SCRIPT_TITLE := "Updater - " . SCRIPT_TITLE
-UPDATER_FETCHING_ERROR := "Error: Failed fetching release info."
-SETTINGS_SCRIPT_TITLE := "Settings - " . SCRIPT_TITLE
-GTA_WINDOW_IDENTIFIER := "Grand Theft Auto V ahk_class grcWindow ahk_exe GTA5.exe"
-USER_INPUT__CURRENTLY_PLAYING_MACRO__STOPPING_KEYS := ["LButton", "RButton", "Enter", "Escape", "Backspace"]
-MSGBOX_SYSTEM_MODAL := 4096
-CENTER_ADJUSTMENT_PIXELS := 7
-DEFAULT_EDIT_RELOAD_All_WEAPONS := 8
-
-DEFAULT_KEY_BINDING__INTERACTION_MENU := "M"
-
-DEFAULT_HOTKEY_BST := "F1"
-DEFAULT_HOTKEY_RELOAD := "F2"
-DEFAULT_HOTKEY_SPAMRESPAWN := "F3"
-DEFAULT_HOTKEY_THERMALVISION := "F4"
-DEFAULT_HOTKEY_SUSPENDGAME := "F11"
-DEFAULT_HOTKEY_TERMINATEGAME := "F12"
-
-TOOLTIP_DISPLAY_TIME := 250
-TOOLTIP_HIDE_TIME := 5000
-
-KEY_DELAY_SLOWEST := 100
-KEY_DELAY_FASTEST := 20
-KEY_DELAY_DEFAULT := 40
-
-GUI_RESOLUTIONS := {
-    MAIN: {
-        WIDTH: 350,
-        HEIGHT: 264
-    },
-    SETTINGS: {
-        WIDTH: 350,
-        HEIGHT: 492
-    },
-    RELOAD_SETTINGS: {
-        WIDTH: 350,
-        HEIGHT: 84
-    }
-}
-
-; Globals
-Hotkeys_Map := Map(
-    "HotkeyBST", DEFAULT_HOTKEY_BST,
-    "HotkeyReload", DEFAULT_HOTKEY_RELOAD,
-    "HotkeySpamRespawn", DEFAULT_HOTKEY_SPAMRESPAWN,
-    "HotkeyThermalVision", DEFAULT_HOTKEY_THERMALVISION,
-    "HotkeySuspendGame", DEFAULT_HOTKEY_SUSPENDGAME,
-    "HotkeyTerminateGame", DEFAULT_HOTKEY_TERMINATEGAME
-)
-KeyHold := KEY_DELAY_DEFAULT
-KeyDelay := KEY_DELAY_DEFAULT
-IsMacroRunning := false
-HasDisplayedMacroSpeedWarning1 := false
-HasDisplayedMacroSpeedWarning2 := false
-gtaWindowID := 0
-EditReloadAllWeapons := DEFAULT_EDIT_RELOAD_All_WEAPONS
-KeyBindings_Map := Map(
-    "Interaction_Menu", DEFAULT_KEY_BINDING__INTERACTION_MENU
-)
-
-
-class Version {
-    __New(ScriptVersion) {
-        this.ParseVersion(ScriptVersion)
-    }
-
-    ParseVersion(ScriptVersion) {
-        static RE_SCRIPT__VERSION_DATE_TIME := "^(v(\d+)\.(\d+)\.(\d+)) - (((\d{2})\/(\d{2})\/(\d{4})) \(((\d{2}):(\d{2}))\))$"
-
-        if not RegExMatch(ScriptVersion, RE_SCRIPT__VERSION_DATE_TIME, &matches) {
-            throw Error("Invalid 'SCRIPT_VERSION' format.")
-        }
-
-        this.FullMatch := matches[0]
-        this.Version := matches[1]
-        this.MajorVersion := matches[2]
-        this.MinorVersion := matches[3]
-        this.PatchVersion := matches[4]
-        this.DateTime := matches[5]
-        this.Date := matches[6]
-        this.Day := matches[7]
-        this.Month := matches[8]
-        this.Year := matches[9]
-        this.Time := matches[10]
-        this.Hour := matches[11]
-        this.Minute := matches[12]
-
-        this.AhkTime := this.Year . this.Month . this.Day . this.Hour . this.Minute
-    }
-}
-
-class Updater {
-    __New(CurrentVersion) {
-        this.CurrentVersion := CurrentVersion
-    }
-
-    CheckForUpdate(LatestVersion) {
-        ; Step 1: Compare major, minor, and patch versions
-        if (LatestVersion.MajorVersion > this.CurrentVersion.MajorVersion)
-            return True
-        else if (LatestVersion.MajorVersion == this.CurrentVersion.MajorVersion) {
-            if (LatestVersion.MinorVersion > this.CurrentVersion.MinorVersion)
-                return True
-            else if (LatestVersion.MinorVersion == this.CurrentVersion.MinorVersion) {
-                if (LatestVersion.PatchVersion > this.CurrentVersion.PatchVersion)
-                    return True
-                else if (LatestVersion.PatchVersion == this.CurrentVersion.PatchVersion) {
-                    ; Step 2: Compare date and time if versioning is equal
-                    return DateDiff(LatestVersion.AhkTime, this.CurrentVersion.AhkTime, "Seconds") > 0
-                }
-            }
-        }
-        return False
-    }
-}
-
-
-SetTitleMatchMode(3) ; Exact match mode
-SetStoreCapsLockMode(false)
-
-On_WM_MOUSEMOVE(wParam, lParam, msg, Hwnd) {
-    static PrevHwnd := 0
-
-    if not (Hwnd == PrevHwnd) {
-        ToolTip()
-        CurrControl := GuiCtrlFromHwnd(Hwnd)
-        if CurrControl {
-            if not CurrControl.HasProp("ToolTip") {
-                return
-            }
-            Text := CurrControl.ToolTip
-            SetTimer(() => ToolTip(Text), -TOOLTIP_DISPLAY_TIME)
-            SetTimer(() => ToolTip(), -TOOLTIP_HIDE_TIME)
-        }
-
-        PrevHwnd := Hwnd
-    }
-}
-
-Link_Click(Ctrl, ID, HREF) {
-    Run(HREF)
-}
-
-WebRequest(method, url) {
-    whr := ComObject("WinHttp.WinHttpRequest.5.1")
-
-    whr.Open(method, url, true)
-    whr.Send()
-    ; Using 'true' above and the call below allows the script to remain responsive.
-    whr.WaitForResponse()
-
-    return { Status: whr.Status, Text: whr.ResponseText }
-}
-
-Pluralize(count, singular, plural := "") {
-    if count > 1 {
-        return plural ? plural : singular . "s"
-    }
-    return singular
-}
-
-InArray(value, arr) {
-    for element in arr {
-        if (value == element)
-            return true
-    }
-    return false
-}
-
-Print(str) {
-    if DEBUG_ENABLED {
-        OutputDebug("[" . A_ScriptName . "]: " . str)
-    }
-}
-
-AddSeparator(gui, Options := {}) {
+AddSeparator(GuiObj, Options := {}) {
     TextOptions1 := "w0 h0" . (Options.HasOwnProp("text1") ? " " . Options.text1 : "")
     TextOptions2 := "w329 h1 Border" . (Options.HasOwnProp("text2") ? " " . Options.text2 : "")
     TextOptions3 := "w0 h0" . (Options.HasOwnProp("text3") ? " " . Options.text3 : "")
 
-    gui.AddText(TextOptions1, "")
-    gui.AddText(TextOptions2, "")
-    gui.AddText(TextOptions3, "")
+    GuiObj.AddText(TextOptions1, "")
+    GuiObj.AddText(TextOptions2, "")
+    GuiObj.AddText(TextOptions3, "")
 }
 
 ; Function to center a GUI element
-CenterElement(gui, element) {
+CenterElement(GuiObj, element) {
     ; Get the dimensions of the GUI
-    gui.GetPos(&guiX, &guiY, &guiWidth, &guiHeight)
+    GuiObj.GetPos(&guiX, &guiY, &guiWidth, &guiHeight)
 
     ; Get the dimensions of the element
     element.GetPos(&elementX, &elementY, &elementWidth, &elementHeight)
@@ -212,9 +29,9 @@ CenterElement(gui, element) {
 }
 
 ; Function to center multiple GUI elements with spacing and a left adjustment
-CenterElements(gui, spacing := 10, elements*) {
+CenterElements(GuiObj, spacing := 10, elements*) {
     ; Get the dimensions of the GUI
-    gui.GetPos(&guiX, &guiY, &guiWidth, &guiHeight)
+    GuiObj.GetPos(&guiX, &guiY, &guiWidth, &guiHeight)
 
     ; Calculate total width of all elements including spacing
     totalWidth := 0
@@ -243,6 +60,54 @@ CenterElements(gui, spacing := 10, elements*) {
     }
 }
 
+GetSettingsFile(Options := {}) {
+    CreateIfNotExist := Options.HasOwnProp("CreateIfNotExist") ? Options.CreateIfNotExist : ""
+
+    if not FileExist(SCRIPT_SETTINGS_FILE) {
+        if CreateIfNotExist {
+            FileAppend("", SCRIPT_SETTINGS_FILE)
+        }
+    }
+
+    if FileExist(SCRIPT_SETTINGS_FILE) {
+        return FileOpen(SCRIPT_SETTINGS_FILE, "r")
+    }
+}
+
+LoadSettings() {
+    global settings
+    settings := {}
+
+    file := GetSettingsFile()
+    if file and IsObject(file) {
+        while !file.AtEOF {
+            line := file.ReadLine()
+            if line != "" {
+                parts := StrSplit(line, "=")
+                if parts.MaxIndex() == 2 {
+                    key := parts[1]
+                    value := parts[2]
+                    settings[key] := value
+                }
+            }
+        }
+        file.Close()
+    }
+
+    return settings
+}
+
+SaveSettings(settings) {
+    file := GetSettingsFile({ CreateIfNotExist: true })
+    if file and IsObject(file) {
+        for key, value in settings {
+            file.Write(key . "=" . value . "`n")
+        }
+        file.Close()
+        MsgBox "Settings saved."
+    }
+}
+
 GenerateMacroSpeedText(NewSpeed) {
     return "Macro Speed [" . NewSpeed . "ms]:"
 }
@@ -268,49 +133,89 @@ SetRunMacroDependencies(State, ForceFocus := "") {
     }
 }
 
-UpdateMacroSpeed(GuiCtrlObj, Info) {
-    global HasDisplayedMacroSpeedWarning1, HasDisplayedMacroSpeedWarning2, KeyDelay, KeyHold
-
-    UpdatedSliderValue := GuiCtrlObj.Value
-    Speed_Text.Value := GenerateMacroSpeedText(UpdatedSliderValue)
-    message := ""
-
-    if UpdatedSliderValue <= 20 {
-        if not HasDisplayedMacroSpeedWarning2 {
-            message := "Legend said, only NASA computers can run this!"
-            HasDisplayedMacroSpeedWarning2 := true
-            HasDisplayedMacroSpeedWarning1 := true
-        }
-    } else if UpdatedSliderValue <= 30 {
-        if not HasDisplayedMacroSpeedWarning1 {
-            message := "These minimal speeds are recommended in small lobbies, with a limited number of players, as it may not work consistently otherwise."
-            HasDisplayedMacroSpeedWarning1 := true
-        }
-        HasDisplayedMacroSpeedWarning2 := false
-    } else {
-        HasDisplayedMacroSpeedWarning1 := false
-        HasDisplayedMacroSpeedWarning2 := false
-    }
-
-    if not message == "" {
-        SetRunMacroDependencies(false, Speed_Slider)
-        MsgBox(
-            message,
-            SCRIPT_TITLE,
-            "OK Iconi " . MSGBOX_SYSTEM_MODAL
-        )
-        SetRunMacroDependencies(true, Speed_Slider)
-    }
-
-    KeyDelay := UpdatedSliderValue
-    KeyHold := UpdatedSliderValue
+OpenMainGui() {
+    MyMainGui.Show("w" . GUI_RESOLUTIONS.MAIN.WIDTH . "h" . GUI_RESOLUTIONS.MAIN.HEIGHT)
+    MyMainGui.OnEvent("Size", HandleGuiSize)
 }
 
-OpenSettings(*) {
+OpenSettingsGui() {
     MySettingsGui.Show("w" . GUI_RESOLUTIONS.SETTINGS.WIDTH . "h" . GUI_RESOLUTIONS.SETTINGS.HEIGHT)
+    MySettingsGui.OnEvent("Size", HandleGuiSize)
+    MyMainGui.Opt("+Disabled")
 }
 
-OpenRepo(*) {
+OpenReloadSettingsGui() {
+    MyReloadSettingsGui.Show("w" . GUI_RESOLUTIONS.RELOAD_SETTINGS.WIDTH . "h" . GUI_RESOLUTIONS.RELOAD_SETTINGS.HEIGHT)
+    MyReloadSettingsGui.OnEvent("Size", HandleGuiSize)
+    MyMainGui.Opt("+Disabled")
+    MySettingsGui.Opt("+Disabled")
+}
+
+OpenKeybindSettingsGui() {
+    MyKeybindSettingsGui.Show("w" . GUI_RESOLUTIONS.KEYBINDS_SETTINGS.WIDTH . "h" . GUI_RESOLUTIONS.KEYBINDS_SETTINGS.HEIGHT)
+    MyKeybindSettingsGui.OnEvent("Size", HandleGuiSize)
+    MyMainGui.Opt("+Disabled")
+    MySettingsGui.Opt("+Disabled")
+}
+
+OpenHotkeySettingsGui() {
+    MyHotkeySettingsGui.Show("w" . GUI_RESOLUTIONS.HOTKEYS_SETTINGS.WIDTH . "h" . GUI_RESOLUTIONS.HOTKEYS_SETTINGS.HEIGHT)
+    MyHotkeySettingsGui.OnEvent("Size", HandleGuiSize)
+    MyMainGui.Opt("+Disabled")
+    MySettingsGui.Opt("+Disabled")
+}
+
+ReEnableGui(GuiToReEnable) {
+    GuiToReEnable.Opt("-Disabled")
+}
+
+MinimizeAllGuis() {
+    MinimizeGui(GuiObj) {
+        static WS_VISIBLE := 0x10000000
+
+        if not WinExist(GuiObj.Hwnd) {
+            return
+        }
+
+        Style := WinGetStyle(GuiObj.Hwnd)
+        if not (Style & WS_VISIBLE) {
+            return
+        }
+
+        GuiObj.Minimize()
+    }
+
+    MinimizeGui(MyMainGui)
+    MinimizeGui(MySettingsGui)
+    MinimizeGui(MyReloadSettingsGui)
+    MinimizeGui(MyKeybindSettingsGui)
+    MinimizeGui(MyHotkeySettingsGui)
+}
+
+RestoreAllGuis() {
+    RestoreGui(GuiObj) {
+        static WS_VISIBLE := 0x10000000
+
+        if not WinExist(GuiObj.Hwnd) {
+            return
+        }
+
+        Style := WinGetStyle(GuiObj.Hwnd)
+        if not (Style & WS_VISIBLE)  {
+            return
+        }
+
+        GuiObj.Show()
+    }
+
+    RestoreGui(MyMainGui)
+    RestoreGui(MySettingsGui)
+    RestoreGui(MyReloadSettingsGui)
+    RestoreGui(MyKeybindSettingsGui)
+    RestoreGui(MyHotkeySettingsGui)
+}
+
+OpenRepo() {
     Run(SCRIPT_REPOSITORY)
 }
 
@@ -466,7 +371,7 @@ ProcessGTAKeystrokes(triggerSource, Keystrokes) {
     }
 
     if triggerSource == "Button" and not WinActive("ahk_id " ThisGtaWindowID) {
-        MyGui.Minimize()
+        MyMainGui.Minimize()
         WinActivate("ahk_id " ThisGtaWindowID)
         Sleep(KeyDelay * 5)
         if not WinActive("ahk_id " ThisGtaWindowID) {
@@ -884,10 +789,10 @@ OnEdit_LoseFocus(EditField, ApplyButton, FallbackValue) {
     ApplyButton.Opt("-Default")
 }
 
-ReloadAllWeapons_Radio1_Click__Callback(*) {
+ReloadAllWeapons_Radio1_Click() {
     ReloadSettings_Button.Enabled := true
 }
-ReloadAllWeapons_Radio2_Click__Callback(*) {
+ReloadAllWeapons_Radio2_Click() {
     MyReloadSettingsGui.Hide()
     ReloadSettings_Button.Enabled := false
 }
@@ -903,43 +808,15 @@ ReloadAllWeapons_Edit__DisplayErrorAndReset(GuiCtrlObj) {
     SetRunMacroDependencies(true)
 }
 
-ReloadAllWeapons_Edit_Change__Callback(GuiCtrlObj, Info) {
-    Value := GuiCtrlObj.Value
-
-    if Value == "" {
-        return false
-    }
-
-    if !IsInteger(Value) or (Value < 1 or Value > 10) {
-        ReloadAllWeapons_Edit__DisplayErrorAndReset(GuiCtrlObj)
-        return false
-    }
-
-    global EditReloadAllWeapons
-    EditReloadAllWeapons := Value
-
-    return true
-}
-
-ReloadAllWeapons_Edit_LoseFocus__Callback(GuiCtrlObj, Info) {
-    Value := GuiCtrlObj.Value
-
-    if Value == "" {
-        ReloadAllWeapons_Edit__DisplayErrorAndReset(GuiCtrlObj)
-        return false
-    }
-    return true
-}
-
 MainLoop() {
     ; START UpdateTrayMenuShowHideOptionState
     if WinExist(SCRIPT_WINDOW_IDENTIFIER) {
         ItemName := "Hide"
-        ActionFunc := (*) => MyGui.Hide()
+        ActionFunc := (*) => MyMainGui.Hide()
         RenameFrom := "Show"
     } else {
         ItemName := "Show"
-        ActionFunc := (*) => MyGui.Show()
+        ActionFunc := (*) => MyMainGui.Show()
         RenameFrom := "Hide"
     }
 
@@ -957,6 +834,11 @@ MainLoop() {
     ; END UpdateTrayMenuShowHideOptionState
 
     ; START IsGTARunning_Callback
+    /*
+    HotIfWinActive(GTA_WINDOW_IDENTIFIER)
+    Known-Bug: After restarting the game this method ain't working anymore.
+    So I fixed it by implementing my own one in the MainLoop just bellow.
+    */
     ; Only enable Hotkeys when the GTA_WINDOW_IDENTIFIER conditions are found.
     global gtaWindowID
 
@@ -977,98 +859,23 @@ MainLoop() {
         }
     }
     ; END IsGTARunning_Callback
+
+    ; START mainGUI
+    ;ActiveHwnd := WinExist("A")
+    ;if ActiveHwnd != MyMainGui.Hwnd {
+    ;    ToolTip()
+    ;}
+
+    global MyMainGui, prevX, prevY, prevW, prevH
+
+    MyMainGui.GetPos(&x, &y, &w, &h)
+
+    if (x != prevX || y != prevY || w != prevW || h != prevH) {
+        ToolTip()
+        prevX := x, prevY := y, prevW := w, prevH := h
+    }
+    ; END mainGUI
 }
-
-
-; Start Main GUI
-MyGui := Gui()
-MyGui.Opt("+AlwaysOnTop")
-MyGui.Title := SCRIPT_TITLE
-
-; Oh please do not ask me what the fuck I've done with x and y I just tried to make it works and it does.
-Speed_Text := MyGui.AddText("y+10 w108", GenerateMacroSpeedText(KEY_DELAY_DEFAULT)) ; here keeping w108 is important to keep (e.g., a 3-digit number like 100) showing up correctly.
-MyGui.AddText("xm x32 y35", "[" . KEY_DELAY_SLOWEST . "ms]")
-Speed_Slider := MyGui.AddSlider("yp y30 w200", KEY_DELAY_SLOWEST - KEY_DELAY_DEFAULT + 20)
-Speed_Slider.Opt("Invert")
-Speed_Slider.Opt("Line5")
-Speed_Slider.Opt("Page10")
-Speed_Slider.Opt("Range" . KEY_DELAY_FASTEST . "-" . KEY_DELAY_SLOWEST)
-Speed_Slider.Opt("Thick30")
-Speed_Slider.Opt("TickInterval5")
-Speed_Slider.Opt("ToolTip")
-Speed_Slider.OnEvent("Change", UpdateMacroSpeed)
-MyGui.AddText("yp y35", "[" . KEY_DELAY_FASTEST . "ms]")
-; Dev-Note: alternative code --> https://discord.com/channels/288498150145261568/866440127320817684/1288240872630259815
-
-AddSeparator(MyGui, {text1: "x10"})
-
-DropBST_Button := MyGui.AddButton("Disabled", "Drop BST*")
-DropBST_Button.OnEvent("Click", (*) => RunMacro(DropBST, "Button"))
-DropBST_Button.ToolTip := "*Ensure you are in a CEO Organization."
-ReloadAllWeapons_Button := MyGui.AddButton("Disabled x+10", "Reload All Weapons*")
-ReloadAllWeapons_Button.OnEvent("Click", (*) => RunMacro(ReloadAllWeapons, "Button"))
-ReloadAllWeapons_Button.ToolTip := "*You can adjust the number of weapon type iterations in the Settings."
-SpamRespawn_Button := MyGui.AddButton("Disabled x+10", "Spam Respawn*")
-SpamRespawn_Button.OnEvent("Click", (*) => RunMacro(SpamRespawn, "Button"))
-SpamRespawn_Button.ToolTip := "*Use this on the death screen after being killed to speed up your respawn time."
-ThermalVision_Button := MyGui.AddButton("Disabled x10", "Thermal Vision*")
-ThermalVision_Button.OnEvent("Click", (*) => RunMacro(ThermalVision, "Button"))
-ThermalVision_Button.ToolTip := "*Toogles your Combat Helmet, Thermal Vision ON/OFF.`nYou must wear a Thermal Vision Combat Helmet (Dual/Quad Lens) with the Visor in the down position.`n`nPlease note that there is a game bug where the helmet doesn't appear in the 'Interaction Menu' > 'Accessories'.`nYou will need to resolve this issue on your own."
-
-MyGui.AddText("x10")
-
-SuspendGame_Button := MyGui.AddButton("Disabled", "Suspend Game*")
-SuspendGame_Button.OnEvent("Click", (*) => RunMacro(SuspendGame, "Button"))
-SuspendGame_Button.ToolTip := "*You can use this to force yourself into a solo public session.`nThis is especially useful when making risky sales in public lobbies."
-TerminateGame_Button := MyGui.AddButton("Disabled x+0", "Terminate Game*")
-TerminateGame_Button.OnEvent("Click", (*) => RunMacro(TerminateGame, "Button"))
-TerminateGame_Button.ToolTip := "*You can use this to select the Casino Lucky Wheel slot you want.`nIf it doesn't match your choice, close the game and try again as many times as needed."
-
-AddSeparator(MyGui, {text1: "x10"})
-
-Settings_Button := MyGui.AddButton("Disabled x+0", "Settings")
-Settings_Button.OnEvent("Click", OpenSettings)
-
-OpenRepo_Button := MyGui.AddButton("Disabled x+0", "Open Repository")
-OpenRepo_Button.OnEvent("Click", OpenRepo)
-
-Updater_Button := MyGui.AddButton("Disabled x+0", "Check For Updates")
-Updater_Button.OnEvent("Click", (*) => RunUpdater("MANUAL"))
-; END Main GUI
-
-; START Settings GUI
-MySettingsGui := Gui()
-MySettingsGui.Opt("+AlwaysOnTop")
-MySettingsGui.Title := SETTINGS_SCRIPT_TITLE
-
-
-MyReloadSettingsGui := Gui()
-MyReloadSettingsGui.Opt("+AlwaysOnTop")
-MyReloadSettingsGui.Title := SETTINGS_SCRIPT_TITLE
-
-
-MyReloadSettingsGui.AddText("x100", "Direction: ")
-ReloadAllWeapons_Iterate_All__Direction__Radio__Left := MyReloadSettingsGui.AddRadio("x+10 Checked", " Left")
-ReloadAllWeapons_Iterate_All__Direction__Radio__Right := MyReloadSettingsGui.AddRadio("x+5", " Right")
-
-ReloadAllWeapons_Text := MyReloadSettingsGui.AddText("x10 y+16", 'Number of iterations:')
-ReloadAllWeapons_Edit := MyReloadSettingsGui.AddEdit("w40")
-ReloadAllWeapons_Edit.OnEvent("Change", ReloadAllWeapons_Edit_Change__Callback)
-ReloadAllWeapons_Edit.OnEvent("LoseFocus", ReloadAllWeapons_Edit_LoseFocus__Callback)
-ReloadAllWeapons_UpDown := MyReloadSettingsGui.AddUpDown("Range1-10", DEFAULT_EDIT_RELOAD_All_WEAPONS)
-
-
-ReloadAllWeapons_Iterate_All__Radio := MySettingsGui.AddRadio("x50 y10 Checked", " Reload All Weapons (Method: Iterate)")
-ReloadAllWeapons_Iterate_All__Radio.OnEvent("Click", ReloadAllWeapons_Radio1_Click__Callback)
-ReloadAllWeapons_Heavy_Weapon__Radio := MySettingsGui.AddRadio("x50", " Reload All Weapons (Method: Heavy Weapon)")
-ReloadAllWeapons_Heavy_Weapon__Radio.OnEvent("Click", ReloadAllWeapons_Radio2_Click__Callback)
-
-MySettingsGui.SetFont("s11")
-ReloadSettings_Button := MySettingsGui.AddButton("x254 y6 w22 h22", "⚙")
-ReloadSettings_Button.OnEvent("Click", (*) => MyReloadSettingsGui.Show("w" . GUI_RESOLUTIONS.RELOAD_SETTINGS.WIDTH . "h" . GUI_RESOLUTIONS.RELOAD_SETTINGS.HEIGHT))
-MySettingsGui.SetFont()
-
-AddSeparator(MySettingsGui, {text1: "x10"})
 
 ApplyKeyBinding(KeyBindingToApply) {
     KeyBind := KeyBinding_Interaction_Menu__HotkeyEdit.Value
@@ -1091,129 +898,3 @@ ResetKeyBinding(KeyBindingToReset) {
     KeyBinding_Interaction_Menu__HotkeyEdit.Value := DEFAULT_KEY_BINDING__INTERACTION_MENU
     KeyBindings_Map[KeyBindingToReset] := DEFAULT_KEY_BINDING__INTERACTION_MENU
 }
-
-MySettingsGui.AddText(, 'In-game key binding for "Interaction Menu" :')
-KeyBinding_Interaction_Menu__HotkeyEdit := MySettingsGui.AddEdit("w100 Limit17", KeyBindings_Map["Interaction_Menu"])
-KeyBinding_Interaction_Menu__HotkeyEdit.OnEvent("Focus", (*) => OnEdit_Focus(KeyBinding_Interaction_Menu__ApplyButton))
-KeyBinding_Interaction_Menu__HotkeyEdit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(KeyBinding_Interaction_Menu__HotkeyEdit, KeyBinding_Interaction_Menu__ApplyButton, KeyBindings_Map["Interaction_Menu"]))
-KeyBinding_Interaction_Menu__ApplyButton := MySettingsGui.AddButton("w66 x+10", "Apply")
-KeyBinding_Interaction_Menu__ApplyButton.OnEvent("Click", (*) => ApplyKeyBinding("Interaction_Menu"))
-KeyBinding_Interaction_Menu__ResetButton := MySettingsGui.AddButton("w66 x+10", "Reset")
-KeyBinding_Interaction_Menu__ResetButton.OnEvent("Click", (*) => ResetKeyBinding("Interaction_Menu"))
-
-AddSeparator(MySettingsGui, {text1: "x10"})
-
-MySettingsGui.AddText(, 'Hotkey for "Drop BST" :')
-HotkeyBST_HotkeyEdit := MySettingsGui.AddEdit("w100 Limit17", DEFAULT_HOTKEY_BST)
-HotkeyBST_HotkeyEdit.OnEvent("Focus", (*) => OnEdit_Focus(HotkeyBST_ApplyButton))
-HotkeyBST_HotkeyEdit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(HotkeyBST_HotkeyEdit, HotkeyBST_ApplyButton, Hotkeys_Map["HotkeyBST"]))
-HotkeyBST_ApplyButton := MySettingsGui.AddButton("w66 x+10", "Apply")
-HotkeyBST_ApplyButton.OnEvent("Click", (*) => ApplyHotkey("HotkeyBST"))
-HotkeyBST_ResetButton := MySettingsGui.AddButton("w66 x+10", "Reset")
-HotkeyBST_ResetButton.OnEvent("Click", (*) => ResetHotkey("HotkeyBST"))
-HotkeyBST_ToggleButton := MySettingsGui.AddButton("w66 x+10", "Disable")
-HotkeyBST_ToggleButton.OnEvent("Click", (*) => ToggleHotkey("HotkeyBST"))
-MySettingsGui.AddText("x10", 'Hotkey for "Reload All Weapons" :')
-HotkeyReload_HotkeyEdit := MySettingsGui.AddEdit("w100 Limit17", DEFAULT_HOTKEY_RELOAD)
-HotkeyReload_HotkeyEdit.OnEvent("Focus", (*) => OnEdit_Focus(HotkeyReload_ApplyButton))
-HotkeyReload_HotkeyEdit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(HotkeyReload_HotkeyEdit, HotkeyReload_ApplyButton, Hotkeys_Map["HotkeyReload"]))
-HotkeyReload_ApplyButton := MySettingsGui.AddButton("w66 x+10", "Apply")
-HotkeyReload_ApplyButton.OnEvent("Click", (*) => ApplyHotkey("HotkeyReload"))
-HotkeyReload_ResetButton := MySettingsGui.AddButton("w66 x+10", "Reset")
-HotkeyReload_ResetButton.OnEvent("Click", (*) => ResetHotkey("HotkeyReload"))
-HotkeyReload_ToggleButton := MySettingsGui.AddButton("w66 x+10", "Disable")
-HotkeyReload_ToggleButton.OnEvent("Click", (*) => ToggleHotkey("HotkeyReload"))
-MySettingsGui.AddText("x10", 'Hotkey for "Spam Respawn" :')
-HotkeySpamRespawn_HotkeyEdit := MySettingsGui.AddEdit("w100 Limit17", DEFAULT_HOTKEY_SPAMRESPAWN)
-HotkeySpamRespawn_HotkeyEdit.OnEvent("Focus", (*) => OnEdit_Focus(HotkeySpamRespawn_ApplyButton))
-HotkeySpamRespawn_HotkeyEdit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(HotkeySpamRespawn_HotkeyEdit, HotkeySpamRespawn_ApplyButton, Hotkeys_Map["HotkeySpamRespawn"]))
-HotkeySpamRespawn_ApplyButton := MySettingsGui.AddButton("w66 x+10", "Apply")
-HotkeySpamRespawn_ApplyButton.OnEvent("Click", (*) => ApplyHotkey("HotkeySpamRespawn"))
-HotkeySpamRespawn_ResetButton := MySettingsGui.AddButton("w66 x+10", "Reset")
-HotkeySpamRespawn_ResetButton.OnEvent("Click", (*) => ResetHotkey("HotkeySpamRespawn"))
-HotkeySpamRespawn_ToggleButton := MySettingsGui.AddButton("w66 x+10", "Disable")
-HotkeySpamRespawn_ToggleButton.OnEvent("Click", (*) => ToggleHotkey("HotkeySpamRespawn"))
-MySettingsGui.AddText("x10", 'Hotkey for "Thermal Vision" :')
-HotkeyThermalVision_HotkeyEdit := MySettingsGui.AddEdit("w100 Limit17", DEFAULT_HOTKEY_THERMALVISION)
-HotkeyThermalVision_HotkeyEdit.OnEvent("Focus", (*) => OnEdit_Focus(HotkeyThermalVision_ApplyButton))
-HotkeyThermalVision_HotkeyEdit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(HotkeyThermalVision_HotkeyEdit, HotkeyThermalVision_ApplyButton, Hotkeys_Map["HotkeyThermalVision"]))
-HotkeyThermalVision_ApplyButton := MySettingsGui.AddButton("w66 x+10", "Apply")
-HotkeyThermalVision_ApplyButton.OnEvent("Click", (*) => ApplyHotkey("HotkeyThermalVision"))
-HotkeyThermalVision_ResetButton := MySettingsGui.AddButton("w66 x+10", "Reset")
-HotkeyThermalVision_ResetButton.OnEvent("Click", (*) => ResetHotkey("HotkeyThermalVision"))
-HotkeyThermalVision_ToggleButton := MySettingsGui.AddButton("w66 x+10", "Disable")
-HotkeyThermalVision_ToggleButton.OnEvent("Click", (*) => ToggleHotkey("HotkeyThermalVision"))
-MySettingsGui.AddText("x10", 'Hotkey for "Suspend Game" :')
-HotkeySuspendGame_HotkeyEdit := MySettingsGui.AddEdit("w100 Limit17", DEFAULT_HOTKEY_SUSPENDGAME)
-HotkeySuspendGame_HotkeyEdit.OnEvent("Focus", (*) => OnEdit_Focus(HotkeySuspendGame_ApplyButton))
-HotkeySuspendGame_HotkeyEdit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(HotkeySuspendGame_HotkeyEdit, HotkeySuspendGame_ApplyButton, Hotkeys_Map["HotkeySuspendGame"]))
-HotkeySuspendGame_HotkeyEdit.Enabled := false
-HotkeySuspendGame_ApplyButton := MySettingsGui.AddButton("w66 x+10", "Apply")
-HotkeySuspendGame_ApplyButton.OnEvent("Click", (*) => ApplyHotkey("HotkeySuspendGame"))
-HotkeySuspendGame_ApplyButton.Enabled := false
-HotkeySuspendGame_ResetButton := MySettingsGui.AddButton("w66 x+10", "Reset")
-HotkeySuspendGame_ResetButton.OnEvent("Click", (*) => ResetHotkey("HotkeySuspendGame"))
-HotkeySuspendGame_ResetButton.Enabled := false
-HotkeySuspendGame_ToggleButton := MySettingsGui.AddButton("w66 x+10", "Enable")
-HotkeySuspendGame_ToggleButton.OnEvent("Click", (*) => ToggleHotkey("HotkeySuspendGame"))
-MySettingsGui.AddText("x10", 'Hotkey for "Terminate Game" :')
-HotkeyTerminateGame_HotkeyEdit := MySettingsGui.AddEdit("w100 Limit17", DEFAULT_HOTKEY_TERMINATEGAME)
-HotkeyTerminateGame_HotkeyEdit.OnEvent("Focus", (*) => OnEdit_Focus(HotkeyTerminateGame_ApplyButton))
-HotkeyTerminateGame_HotkeyEdit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(HotkeyTerminateGame_HotkeyEdit, HotkeyTerminateGame_ApplyButton, Hotkeys_Map["HotkeyTerminateGame"]))
-HotkeyTerminateGame_HotkeyEdit.Enabled := false
-HotkeyTerminateGame_ApplyButton := MySettingsGui.AddButton("w66 x+10", "Apply")
-HotkeyTerminateGame_ApplyButton.OnEvent("Click", (*) => ApplyHotkey("HotkeyTerminateGame"))
-HotkeyTerminateGame_ApplyButton.Enabled := false
-HotkeyTerminateGame_ResetButton := MySettingsGui.AddButton("w66 x+10", "Reset")
-HotkeyTerminateGame_ResetButton.OnEvent("Click", (*) => ResetHotkey("HotkeyTerminateGame"))
-HotkeyTerminateGame_ResetButton.Enabled := false
-HotkeyTerminateGame_ToggleButton := MySettingsGui.AddButton("w66 x+10", "Enable")
-HotkeyTerminateGame_ToggleButton.OnEvent("Click", (*) => ToggleHotkey("HotkeyTerminateGame"))
-HotkeysHelp_Link := MySettingsGui.AddLink("x10", 'Full list of possible Hotkeys:`n<a id="KeyListHelp" href="https://www.autohotkey.com/docs/v2/KeyList.htm">https://www.autohotkey.com/docs/v2/KeyList.htm</a>')
-HotkeysHelp_Link.OnEvent("Click", Link_Click)
-; END Settings GUI
-
-Hotkey(Hotkeys_Map["HotkeyBST"], (*) => RunMacro(DropBST, "Hotkey"), "Off")
-Hotkey(Hotkeys_Map["HotkeyReload"], (*) => RunMacro(ReloadAllWeapons, "Hotkey"), "Off")
-Hotkey(Hotkeys_Map["HotkeySpamRespawn"], (*) => RunMacro(SpamRespawn, "Hotkey"), "Off")
-Hotkey(Hotkeys_Map["HotkeyThermalVision"], (*) => RunMacro(ThermalVision, "Hotkey"), "Off")
-Hotkey(Hotkeys_Map["HotkeySuspendGame"], (*) => RunMacro(SuspendGame, "Hotkey"), "Off")
-Hotkey(Hotkeys_Map["HotkeyTerminateGame"], (*) => RunMacro(TerminateGame, "Hotkey"), "Off")
-
-MyGui.Show("w" . GUI_RESOLUTIONS.MAIN.WIDTH . "h" . GUI_RESOLUTIONS.MAIN.HEIGHT)
-
-CenterElement(MyGui, Speed_Text)
-CenterElement(MyGui, Speed_Slider)
-CenterElements(MyGui,, DropBST_Button, ReloadAllWeapons_Button, SpamRespawn_Button)
-CenterElement(MyGui, ThermalVision_Button)
-CenterElements(MyGui,, SuspendGame_Button, TerminateGame_Button)
-CenterElements(MyGui, 0, ReloadAllWeapons_Edit, ReloadAllWeapons_UpDown)
-CenterElements(MyGui, 20, Settings_Button, OpenRepo_Button, Updater_Button)
-
-CenterElement(MyGui, ReloadAllWeapons_Text)
-
-; Fixes a visual Glitch issue, using `Hidden` and then `.Visible` works too, but this is cleaner imo.
-DropBST_Button.Enabled := true
-ReloadAllWeapons_Button.Enabled := true
-SpamRespawn_Button.Enabled := true
-ThermalVision_Button.Enabled := true
-SuspendGame_Button.Enabled := true
-TerminateGame_Button.Enabled := true
-Settings_Button.Enabled := true
-OpenRepo_Button.Enabled := true
-Updater_Button.Enabled := true
-
-OnMessage(0x0200, On_WM_MOUSEMOVE)
-
-A_TrayMenu.Insert("1&", "Hide", (*) => MyGui.Hide())
-A_TrayMenu.Insert("2&")
-
-RunUpdater("STARTUP")
-
-/*
-HotIfWinActive(GTA_WINDOW_IDENTIFIER)
-Known-Bug: After restarting the game this method ain't working anymore.
-So I fixed it by implementing my own one in the MainLoop just bellow.
-*/
-
-SetTimer(MainLoop, 100)

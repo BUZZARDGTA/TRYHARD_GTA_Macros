@@ -1,0 +1,15 @@
+﻿MyKeybindSettingsGui := Gui()
+MyKeybindSettingsGui.OnEvent("Close", (*) => ReEnableGui(MySettingsGui))
+MyKeybindSettingsGui.Opt("+AlwaysOnTop")
+MyKeybindSettingsGui.Title := SETTINGS_SCRIPT_TITLE
+
+MyKeybindSettingsGui.AddText(, 'In-game key binding for "Interaction Menu" :')
+KeyBinding_Interaction_Menu__HotkeyEdit := MyKeybindSettingsGui.AddEdit("w100 Limit17", KeyBindings_Map["Interaction_Menu"])
+KeyBinding_Interaction_Menu__HotkeyEdit.OnEvent("Focus", (*) => OnEdit_Focus(KeyBinding_Interaction_Menu__ApplyButton))
+KeyBinding_Interaction_Menu__HotkeyEdit.OnEvent("LoseFocus", (*) => OnEdit_LoseFocus(KeyBinding_Interaction_Menu__HotkeyEdit, KeyBinding_Interaction_Menu__ApplyButton, KeyBindings_Map["Interaction_Menu"]))
+KeyBinding_Interaction_Menu__ApplyButton := MyKeybindSettingsGui.AddButton("w66 x+10", "Apply")
+KeyBinding_Interaction_Menu__ApplyButton.OnEvent("Click", (*) => ApplyKeyBinding("Interaction_Menu"))
+KeyBinding_Interaction_Menu__ResetButton := MyKeybindSettingsGui.AddButton("w66 x+10", "Reset")
+KeyBinding_Interaction_Menu__ResetButton.OnEvent("Click", (*) => ResetKeyBinding("Interaction_Menu"))
+KeyBindingsHelp_Link := MyKeybindSettingsGui.AddLink("x10", 'Full list of possible keybind inputs:`n<a id="KeyListHelp" href="https://www.autohotkey.com/docs/v2/KeyList.htm">https://www.autohotkey.com/docs/v2/KeyList.htm</a>')
+KeyBindingsHelp_Link.OnEvent("Click", Link_Click)
