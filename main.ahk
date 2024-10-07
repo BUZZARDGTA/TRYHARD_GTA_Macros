@@ -9,7 +9,7 @@
 #Include "lib\funcs\callbacks.ahk"
 #Include "lib\funcs\core.ahk"
 
-settings := LoadSettings()
+LoadSettings({ IsScriptStartup: true })
 
 #Include "lib\guis\main.ahk"
 #Include "lib\guis\settings.ahk"
@@ -34,7 +34,7 @@ CenterElements(MyMainGui, 20, Settings_Button, OpenRepo_Button, Updater_Button)
 CenterElement(MyMainGui, ReloadAllWeapons_Text)
 CenterElements(MyMainGui, 20, Settings_Button, OpenRepo_Button, Updater_Button)
 CenterElements(MyMainGui,, KeyBindings_Button, Hotkeys_Button)
-CenterElements(MyMainGui, 40, LoadSettings_Button, SaveSettings_Button)
+CenterElements(MyMainGui, 30, LoadSettings_Button, SaveSettings_Button, ResetSettings_Button)
 
 ; Fixes a visual Glitch issue, using `Hidden` and then `.Visible` works too, but this is cleaner imo.
 DropBST_Button.Enabled := true

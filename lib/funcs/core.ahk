@@ -60,52 +60,90 @@ CenterElements(GuiObj, spacing := 10, elements*) {
     }
 }
 
-GetSettingsFile(Options := {}) {
-    CreateIfNotExist := Options.HasOwnProp("CreateIfNotExist") ? Options.CreateIfNotExist : ""
+LoadSettings(Options := {}) {
+    Options.IsScriptStartup := Options.HasOwnProp("IsScriptStartup") ? Options.IsScriptStartup : false
 
-    if not FileExist(SCRIPT_SETTINGS_FILE) {
-        if CreateIfNotExist {
-            FileAppend("", SCRIPT_SETTINGS_FILE)
-        }
+    file := false
+    try {
+        file := FileOpen(SCRIPT_SETTINGS_FILE, "r")
     }
-
-    if FileExist(SCRIPT_SETTINGS_FILE) {
-        return FileOpen(SCRIPT_SETTINGS_FILE, "r")
-    }
-}
-
-LoadSettings() {
-    global settings
-    settings := {}
-
-    file := GetSettingsFile()
     if file and IsObject(file) {
         while !file.AtEOF {
             line := file.ReadLine()
             if line != "" {
                 parts := StrSplit(line, "=")
-                if parts.MaxIndex() == 2 {
+                if parts.Length == 2 {
                     key := parts[1]
                     value := parts[2]
-                    settings[key] := value
+                    Settings_Map[key] := value
                 }
             }
         }
         file.Close()
+        if not Options.IsScriptStartup {
+            MsgBox(
+                "Saved settings loaded successfully!`n`nThey are now appplied.",
+                SETTINGS_SCRIPT_TITLE,
+                "OK Iconi " . MSGBOX_SYSTEM_MODAL
+            )
+        }
+        return
     }
-
-    return settings
+    if not Options.IsScriptStartup {
+        MsgBox(
+            "Something went wrong while loading your saved settings :(",
+            SETTINGS_SCRIPT_TITLE,
+            "OK Iconx " . MSGBOX_SYSTEM_MODAL
+        )
+    }
 }
 
-SaveSettings(settings) {
-    file := GetSettingsFile({ CreateIfNotExist: true })
+SaveSettings() {
+    file := false
+    try {
+        file := FileOpen(SCRIPT_SETTINGS_FILE, "w")
+    }
     if file and IsObject(file) {
-        for key, value in settings {
-            file.Write(key . "=" . value . "`n")
+        for key, value in Settings_Map {
+            file.WriteLine(key . "=" . value)
         }
         file.Close()
-        MsgBox "Settings saved."
+        MsgBox(
+            "Settings saved successfully!`n`nThey will now be auto-applied upon next times.",
+            SETTINGS_SCRIPT_TITLE,
+            "OK Iconi " . MSGBOX_SYSTEM_MODAL
+        )
+        return
     }
+    MsgBox(
+        "Something went wrong while saving your settings :(",
+        SETTINGS_SCRIPT_TITLE,
+        "OK Iconx " . MSGBOX_SYSTEM_MODAL
+    )
+}
+
+ResetSettings() {
+    file := false
+    try {
+        file := FileOpen(SCRIPT_SETTINGS_FILE, "w")
+    }
+    if file and IsObject(file) {
+        for key, value in DefaultSettings_Map {
+            file.WriteLine(key . "=" . value)
+        }
+        file.Close()
+        MsgBox(
+            "Settings reset successfully!`n`nThey will be auto-applied upon next times.",
+            SETTINGS_SCRIPT_TITLE,
+            "OK Iconi " . MSGBOX_SYSTEM_MODAL
+        )
+        return
+    }
+    MsgBox(
+        "Something went wrong while reset your settings :(",
+        SETTINGS_SCRIPT_TITLE,
+        "OK Iconx " . MSGBOX_SYSTEM_MODAL
+    )
 }
 
 GenerateMacroSpeedText(NewSpeed) {
