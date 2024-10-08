@@ -22,13 +22,11 @@ Macros for TRYHARD players using AutoHotkey v2.
 
 > Ensure you are in a CEO Organization.
 >
-> There is a known bug in GTA:O where "SecuroServ CEO" says "SecuroServ is currently unavailable. Please try again later."
->
-> There is a known bug in GTA:O where "Drop Bull Shark" says "You have hit the drop limit for this item."
+> There is a known bug in GTA:O where "Drop Bull Shark" says [“You have hit the drop limit for this item”](https://github.com/user-attachments/assets/fa1e7cee-9e11-491e-b824-0a9ca1c20ce2).
 
 ### "Reload All Weapons" is not working
 
-> There is a known bug in GTA:O where "Full Ammo" says "You are unable to purchase ammo at this time."
+> There is a known bug in GTA:O where "Full Ammo" says [“You are unable to purchase ammo at this time”](https://github.com/user-attachments/assets/c9e0b3e6-7da5-4a05-a886-74fc1fbcc26a).
 
 ### "Thermal Vision" is not working
 
@@ -36,7 +34,7 @@ Macros for TRYHARD players using AutoHotkey v2.
 
 ### "Reload All Weapons" / "Thermal Vision" sometimes fails
 
-> If you are NOT in a CEO/MC, there is a known bug in GTA:O where "Register as a Boss" may sometimes randomly be hidden from the Interaction Menu.<br>
+> If you are NOT in a CEO/MC, there is a known bug in GTA:O where "Register as a Boss" may sometimes [randomly be hidden from the Interaction Menu](https://github.com/user-attachments/assets/2bc88def-a270-40ab-bbc8-7cbfc5362a1c).<br>
 > I highly recommend using the "Reload All Weapons" macro ONLY when you're in a CEO/MC, as using it outside may change your character's appearance and result in being disconnected from the session.
 
 ### Macros are not working consistently
