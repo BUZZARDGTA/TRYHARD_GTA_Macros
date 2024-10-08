@@ -21,6 +21,8 @@ Macros for TRYHARD players using AutoHotkey v2.
 ### "Drop BST" is not working
 
 > Ensure you are in a CEO Organization.
+> 
+> There is a known bug in GTA:O where "SecuroServ CEO" says [“SecuroServ is currently unavailable. Please try again later”](https://github.com/user-attachments/assets/e8676a8f-99f6-4999-a74d-0d6de2b60f90).
 >
 > There is a known bug in GTA:O where "Drop Bull Shark" says [“You have hit the drop limit for this item”](https://github.com/user-attachments/assets/fa1e7cee-9e11-491e-b824-0a9ca1c20ce2).
 
