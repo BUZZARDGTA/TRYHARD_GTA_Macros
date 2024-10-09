@@ -27,7 +27,7 @@ Link_Click(Ctrl, ID, HREF) {
 }
 
 UpdateMacroSpeed(GuiCtrlObj, Info) {
-    global HasDisplayedMacroSpeedWarning1, HasDisplayedMacroSpeedWarning2, KeyDelay, KeyHold
+    global HasDisplayedMacroSpeedWarning1, HasDisplayedMacroSpeedWarning2
 
     UpdatedSliderValue := GuiCtrlObj.Value
     Speed_Text.Value := GenerateMacroSpeedText(UpdatedSliderValue)
@@ -60,8 +60,8 @@ UpdateMacroSpeed(GuiCtrlObj, Info) {
         SetRunMacroDependencies(true, Speed_Slider)
     }
 
-    KeyDelay := UpdatedSliderValue
-    KeyHold := UpdatedSliderValue
+    Settings_Map["KEY_DELAY"] := UpdatedSliderValue
+    Settings_Map["KEY_HOLD"] := UpdatedSliderValue
 }
 
 ReloadAllWeapons_Edit_Change(GuiCtrlObj, Info) {
@@ -76,8 +76,7 @@ ReloadAllWeapons_Edit_Change(GuiCtrlObj, Info) {
         return false
     }
 
-    global EditReloadAllWeapons
-    EditReloadAllWeapons := Value
+    Settings_Map["EDIT_RELOAD_All_WEAPONS"] := Value
 
     return true
 }

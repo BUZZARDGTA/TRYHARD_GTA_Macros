@@ -3,9 +3,9 @@ MyMainGui.Opt("+AlwaysOnTop")
 MyMainGui.Title := SCRIPT_TITLE
 
 ; Oh please do not ask me what the fuck I've done with x and y I just tried to make it works and it does.
-Speed_Text := MyMainGui.AddText("y+10 w108", GenerateMacroSpeedText(KEY_DELAY_DEFAULT)) ; here keeping w108 is important to keep (e.g., a 3-digit number like 100) showing up correctly.
+Speed_Text := MyMainGui.AddText("y+10 w108", GenerateMacroSpeedText(Settings_Map["KEY_DELAY"])) ; here keeping w108 is important to keep (e.g., a 3-digit number like 100) showing up correctly.
 MyMainGui.AddText("xm x32 y35", "[" . KEY_DELAY_SLOWEST . "ms]")
-Speed_Slider := MyMainGui.AddSlider("yp y30 w200", KEY_DELAY_SLOWEST - KEY_DELAY_DEFAULT + 20)
+Speed_Slider := MyMainGui.AddSlider("yp y30 w200", KEY_DELAY_SLOWEST - Settings_Map["KEY_DELAY"] + 20)
 Speed_Slider.Opt("Invert")
 Speed_Slider.Opt("Line5")
 Speed_Slider.Opt("Page10")

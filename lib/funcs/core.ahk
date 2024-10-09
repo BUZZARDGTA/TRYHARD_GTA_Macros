@@ -123,12 +123,14 @@ SaveSettings() {
 }
 
 ResetSettings() {
+    Settings_Map := DEFAULT_SETTINGS__MAP
+
     file := false
     try {
         file := FileOpen(SCRIPT_SETTINGS_FILE, "w")
     }
     if file and IsObject(file) {
-        for key, value in DefaultSettings_Map {
+        for key, value in DEFAULT_SETTINGS__MAP {
             file.WriteLine(key . "=" . value)
         }
         file.Close()
@@ -158,8 +160,8 @@ SetRunMacroDependencies(State, ForceFocus := "") {
     ThermalVision_Button.Enabled := State
     SuspendGame_Button.Enabled := State
 
-    ReloadAllWeapons_Iterate_All__Radio.Enabled := State
-    ReloadAllWeapons_Heavy_Weapon__Radio.Enabled := State
+    ReloadAllWeapons_IterateAll__Radio.Enabled := State
+    ReloadAllWeapons_HeavyWeapon__Radio.Enabled := State
     KeyBinding_Interaction_Menu__HotkeyEdit.Enabled := State
     KeyBinding_Interaction_Menu__ApplyButton.Enabled := State
     KeyBinding_Interaction_Menu__ResetButton.Enabled := State
@@ -411,7 +413,7 @@ ProcessGTAKeystrokes(triggerSource, Keystrokes) {
     if triggerSource == "Button" and not WinActive("ahk_id " ThisGtaWindowID) {
         MyMainGui.Minimize()
         WinActivate("ahk_id " ThisGtaWindowID)
-        Sleep(KeyDelay * 5)
+        Sleep(Settings_Map["KEY_DELAY"] * 5)
         if not WinActive("ahk_id " ThisGtaWindowID) {
             MsgBox(
                 "ERROR: Failed to activate GTA V window, aborting process.",
@@ -421,14 +423,14 @@ ProcessGTAKeystrokes(triggerSource, Keystrokes) {
             return false
         }
         ToolTip()
-        Sleep(KeyDelay * 10)
+        Sleep(Settings_Map["KEY_DELAY"] * 10)
     }
 
     for index, Keystroke in Keystrokes {
         ; Apply default values if not provided in the Keystroke properties.
         Keystroke.count := Keystroke.HasOwnProp("count") ? Keystroke.count : 1
-        Keystroke.hold := Keystroke.HasOwnProp("hold") ? Keystroke.hold : KeyHold
-        Keystroke.delay := Keystroke.HasOwnProp("delay") ? Keystroke.delay : KeyDelay
+        Keystroke.hold := Keystroke.HasOwnProp("hold") ? Keystroke.hold : Settings_Map["KEY_HOLD"]
+        Keystroke.delay := Keystroke.HasOwnProp("delay") ? Keystroke.delay : Settings_Map["KEY_DELAY"]
 
         loop Keystroke.count {
             if not GetValidGTAwinRunning({ hwnd: ThisGtaWindowID, AndActive: true }) {
@@ -458,7 +460,7 @@ ProcessGTAKeystrokes(triggerSource, Keystrokes) {
 
 DropBST(triggerSource) {
     BST_Keystrokes := [
-        { key: KeyBindings_Map["Interaction_Menu"] }, ; in [Interaction Menu]
+        { key: Settings_Map["KEY_BINDING__INTERACTION_MENU"] }, ; in [Interaction Menu]
         { key: "Enter" }, ; in [SecuroServ CEO]
         { key: "Down", count: 4 }, ; hover [CEO Abilities]
         { key: "Enter" }, ; in [CEO Abilities]
@@ -471,7 +473,7 @@ DropBST(triggerSource) {
 
 ReloadAllWeapons(triggerSource) {
     direction := ""
-    if ReloadAllWeapons_Iterate_All__Direction__Radio__Right.Value == 1 {
+    if ReloadAllWeapons_IterateAll__Direction_Right__Radio.Value == 1 {
         direction := "Right"
     } else {
         direction := "Left"
@@ -480,19 +482,19 @@ ReloadAllWeapons(triggerSource) {
     Reload_Keystrokes := []
 
     Reload_Keystrokes.Push(
-        { key: KeyBindings_Map["Interaction_Menu"] }, ; in [Interaction Menu]
+        { key: Settings_Map["KEY_BINDING__INTERACTION_MENU"] }, ; in [Interaction Menu]
         { key: "Down", count: 4 }, ; hover [Health and Ammo]
         { key: "Enter", count: 2 } ; in [Health and Ammo] and [Ammo]
     )
 
-    if ReloadAllWeapons_Heavy_Weapon__Radio.Value == 1 {
+    if ReloadAllWeapons_HeavyWeapon__Radio.Value == 1 {
         Reload_Keystrokes.Push(
             { key: "Enter" }, ; hover [Ammo Type < All >]
             { key: "Up" }, ; hover [Full Ammo $x]
             { key: "Enter" } ; select [Full Ammo $x]
         )
     } else {
-        NumOfWeaponTypesToIterate := EditReloadAllWeapons
+        NumOfWeaponTypesToIterate := Settings_Map["EDIT_RELOAD_All_WEAPONS"]
 
         ; Iterate through each [Ammo Type] and select the [Full Ammo $x] option for each
         Loop NumOfWeaponTypesToIterate {
@@ -511,7 +513,7 @@ ReloadAllWeapons(triggerSource) {
         }
     }
 
-    Reload_Keystrokes.Push({ key: KeyBindings_Map["Interaction_Menu"] }) ; exit [Interaction Menu]
+    Reload_Keystrokes.Push({ key: Settings_Map["KEY_BINDING__INTERACTION_MENU"] }) ; exit [Interaction Menu]
 
     return ProcessGTAKeystrokes(triggerSource, Reload_Keystrokes)
 }
@@ -526,14 +528,14 @@ SpamRespawn(triggerSource) {
 
 ThermalVision(triggerSource) {
     ThermalVision_Keystrokes := [
-        { key: KeyBindings_Map["Interaction_Menu"] }, ; in [Interaction Menu]
+        { key: Settings_Map["KEY_BINDING__INTERACTION_MENU"] }, ; in [Interaction Menu]
         { key: "Down", count: 5 }, ; hover [Appearance]
         { key: "Enter" }, ; select [Appearance]
         { key: "Down" }, ; hover [Accessories]
         { key: "Enter" }, ; select [Accessories]
         { key: "Down", count: 4 }, ; hover [Helmets]
         { key: "Space" }, ; select [Helmets]
-        { key: KeyBindings_Map["Interaction_Menu"] } ; exit [Interaction Menu]
+        { key: Settings_Map["KEY_BINDING__INTERACTION_MENU"] } ; exit [Interaction Menu]
     ]
 
     return ProcessGTAKeystrokes(triggerSource, ThermalVision_Keystrokes)
@@ -631,9 +633,9 @@ TerminateGame(triggerSource) {
 
 GetHotkeysObjects_Map(HotkeyName := "") {
     HotkeysObjects_Map := Map(
-        "HotkeyBST", {
-            Hotkey: Hotkeys_Map["HotkeyBST"],
-            DefaultHotkey: DEFAULT_HOTKEY_BST,
+        "HOTKEY_BST", {
+            Hotkey: Settings_Map["HOTKEY_BST"],
+            DefaultHotkey: DEFAULT_SETTINGS__MAP["HOTKEY_BST"],
             Button: DropBST_Button,
             HotkeyEdit: HotkeyBST_HotkeyEdit,
             ApplyButton: HotkeyBST_ApplyButton,
@@ -641,9 +643,9 @@ GetHotkeysObjects_Map(HotkeyName := "") {
             ToggleButton: HotkeyBST_ToggleButton,
             MacroFunc: DropBST
         },
-        "HotkeyReload", {
-            Hotkey: Hotkeys_Map["HotkeyReload"],
-            DefaultHotkey: DEFAULT_HOTKEY_RELOAD,
+        "HOTKEY_RELOAD", {
+            Hotkey: Settings_Map["HOTKEY_RELOAD"],
+            DefaultHotkey: DEFAULT_SETTINGS__MAP["HOTKEY_RELOAD"],
             Button: ReloadAllWeapons_Button,
             HotkeyEdit: HotkeyReload_HotkeyEdit,
             ApplyButton: HotkeyReload_ApplyButton,
@@ -651,9 +653,9 @@ GetHotkeysObjects_Map(HotkeyName := "") {
             ToggleButton: HotkeyReload_ToggleButton,
             MacroFunc: ReloadAllWeapons
         },
-        "HotkeySpamRespawn", {
-            Hotkey: Hotkeys_Map["HotkeySpamRespawn"],
-            DefaultHotkey: DEFAULT_HOTKEY_SPAMRESPAWN,
+        "HOTKEY_SPAMRESPAWN", {
+            Hotkey: Settings_Map["HOTKEY_SPAMRESPAWN"],
+            DefaultHotkey: DEFAULT_SETTINGS__MAP["HOTKEY_SPAMRESPAWN"],
             Button: SpamRespawn_Button,
             HotkeyEdit: HotkeySpamRespawn_HotkeyEdit,
             ApplyButton: HotkeySpamRespawn_ApplyButton,
@@ -661,9 +663,9 @@ GetHotkeysObjects_Map(HotkeyName := "") {
             ToggleButton: HotkeySpamRespawn_ToggleButton,
             MacroFunc: SpamRespawn
         },
-        "HotkeyThermalVision", {
-            Hotkey: Hotkeys_Map["HotkeyThermalVision"],
-            DefaultHotkey: DEFAULT_HOTKEY_THERMALVISION,
+        "HOTKEY_THERMALVISION", {
+            Hotkey: Settings_Map["HOTKEY_THERMALVISION"],
+            DefaultHotkey: DEFAULT_SETTINGS__MAP["HOTKEY_THERMALVISION"],
             Button: ThermalVision_Button,
             HotkeyEdit: HotkeyThermalVision_HotkeyEdit,
             ApplyButton: HotkeyThermalVision_ApplyButton,
@@ -671,9 +673,9 @@ GetHotkeysObjects_Map(HotkeyName := "") {
             ToggleButton: HotkeyThermalVision_ToggleButton,
             MacroFunc: ThermalVision
         },
-        "HotkeySuspendGame", {
-            Hotkey: Hotkeys_Map["HotkeySuspendGame"],
-            DefaultHotkey: DEFAULT_HOTKEY_SUSPENDGAME,
+        "HOTKEY_SUSPENDGAME", {
+            Hotkey: Settings_Map["HOTKEY_SUSPENDGAME"],
+            DefaultHotkey: DEFAULT_SETTINGS__MAP["HOTKEY_SUSPENDGAME"],
             Button: SuspendGame_Button,
             HotkeyEdit: HotkeySuspendGame_HotkeyEdit,
             ApplyButton: HotkeySuspendGame_ApplyButton,
@@ -681,9 +683,9 @@ GetHotkeysObjects_Map(HotkeyName := "") {
             ToggleButton: HotkeySuspendGame_ToggleButton,
             MacroFunc: SuspendGame
         },
-        "HotkeyTerminateGame", {
-            Hotkey: Hotkeys_Map["HotkeyTerminateGame"],
-            DefaultHotkey: DEFAULT_HOTKEY_TERMINATEGAME,
+        "HOTKEY_TERMINATEGAME", {
+            Hotkey: Settings_Map["HOTKEY_TERMINATEGAME"],
+            DefaultHotkey: DEFAULT_SETTINGS__MAP["HOTKEY_TERMINATEGAME"],
             Button: TerminateGame_Button,
             HotkeyEdit: HotkeyTerminateGame_HotkeyEdit,
             ApplyButton: HotkeyTerminateGame_ApplyButton,
@@ -707,7 +709,7 @@ RemoveHotkey(HotkeyToRemove) {
     }
     HotkeyObjects_Map.HotkeyEdit.Value := ""
     HotkeyObjects_Map.ToggleButton.Enabled := false
-    Hotkeys_Map[HotkeyToRemove] := false
+    Settings_Map[HotkeyToRemove] := false
 }
 
 ApplyHotkey(HotkeyToApply) {
@@ -767,7 +769,7 @@ ApplyHotkey(HotkeyToApply) {
 
     Hotkey(HotkeyObjects_Map.HotkeyEdit.Value, "On")
     HotkeyObjects_Map.ToggleButton.Enabled := true
-    Hotkeys_Map[HotkeyToApply] := HotkeyObjects_Map.HotkeyEdit.Value
+    Settings_Map[HotkeyToApply] := HotkeyObjects_Map.HotkeyEdit.Value
 
     return true
 }
@@ -781,7 +783,7 @@ ResetHotkey(HotkeyToReset) {
     Hotkey(HotkeyObjects_Map.DefaultHotkey, "On")
     HotkeyObjects_Map.HotkeyEdit.Value := HotkeyObjects_Map.DefaultHotkey
     HotkeyObjects_Map.ToggleButton.Enabled := true
-    Hotkeys_Map[HotkeyToReset] := HotkeyObjects_Map.DefaultHotkey
+    Settings_Map[HotkeyToReset] := HotkeyObjects_Map.DefaultHotkey
 }
 
 ToggleHotkey(HotkeyToToggle) {
@@ -827,12 +829,13 @@ OnEdit_LoseFocus(EditField, ApplyButton, FallbackValue) {
     ApplyButton.Opt("-Default")
 }
 
-ReloadAllWeapons_Radio1_Click() {
-    ReloadSettings_Button.Enabled := true
-}
-ReloadAllWeapons_Radio2_Click() {
+ReloadAllWeapons_IterateAll__Click() {
     MyReloadSettingsGui.Hide()
     ReloadSettings_Button.Enabled := false
+}
+
+ReloadAllWeapons_HeavyWeapon__Click() {
+    ReloadSettings_Button.Enabled := true
 }
 
 ReloadAllWeapons_Edit__DisplayErrorAndReset(GuiCtrlObj) {
@@ -842,7 +845,7 @@ ReloadAllWeapons_Edit__DisplayErrorAndReset(GuiCtrlObj) {
         SETTINGS_SCRIPT_TITLE,
         "OK Icon! " . MSGBOX_SYSTEM_MODAL
     )
-    GuiCtrlObj.Value := EditReloadAllWeapons
+    GuiCtrlObj.Value := Settings_Map["EDIT_RELOAD_All_WEAPONS"]
     SetRunMacroDependencies(true)
 }
 
@@ -870,6 +873,20 @@ MainLoop() {
         A_TrayMenu.Default := ItemName
     }
     ; END UpdateTrayMenuShowHideOptionState
+
+    ; START Settings
+    if ReloadAllWeapons_HeavyWeapon__Radio.Value == 1 {
+        Settings_Map["RADIO_RELOAD_All_WEAPONS_METHOD"] := 2
+    } else {
+        Settings_Map["RADIO_RELOAD_All_WEAPONS_METHOD"] := 1
+    }
+
+    if ReloadAllWeapons_IterateAll__Direction_Right__Radio.Value == 1 {
+        Settings_Map["RADIO_RELOAD_All_WEAPONS_ITERATE_DIRECTION"] := 2
+    } else {
+        Settings_Map["RADIO_RELOAD_All_WEAPONS_ITERATE_DIRECTION"] := 1
+    }
+    ; END Settings
 
     ; START IsGTARunning_Callback
     /*
@@ -899,11 +916,6 @@ MainLoop() {
     ; END IsGTARunning_Callback
 
     ; START mainGUI
-    ;ActiveHwnd := WinExist("A")
-    ;if ActiveHwnd != MyMainGui.Hwnd {
-    ;    ToolTip()
-    ;}
-
     global MyMainGui, prevX, prevY, prevW, prevH
 
     MyMainGui.GetPos(&x, &y, &w, &h)
@@ -919,7 +931,7 @@ ApplyKeyBinding(KeyBindingToApply) {
     KeyBind := KeyBinding_Interaction_Menu__HotkeyEdit.Value
 
     if GetKeySC(KeyBind) {
-        KeyBindings_Map[KeyBindingToApply] := KeyBind
+        Settings_Map[KeyBindingToApply] := KeyBind
         return true
     }
 
@@ -928,11 +940,11 @@ ApplyKeyBinding(KeyBindingToApply) {
         SCRIPT_TITLE,
         "OK Icon! " . MSGBOX_SYSTEM_MODAL
     )
-    KeyBinding_Interaction_Menu__HotkeyEdit.Value := KeyBindings_Map[KeyBindingToApply]
+    KeyBinding_Interaction_Menu__HotkeyEdit.Value := Settings_Map[KeyBindingToApply]
     return false
 }
 
 ResetKeyBinding(KeyBindingToReset) {
-    KeyBinding_Interaction_Menu__HotkeyEdit.Value := DEFAULT_KEY_BINDING__INTERACTION_MENU
-    KeyBindings_Map[KeyBindingToReset] := DEFAULT_KEY_BINDING__INTERACTION_MENU
+    KeyBinding_Interaction_Menu__HotkeyEdit.Value := DEFAULT_SETTINGS__MAP[KeyBindingToReset]
+    Settings_Map[KeyBindingToReset] := DEFAULT_SETTINGS__MAP[KeyBindingToReset]
 }

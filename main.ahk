@@ -14,12 +14,12 @@ LoadSettings({ IsScriptStartup: true })
 #Include "lib\guis\main.ahk"
 #Include "lib\guis\settings.ahk"
 
-Hotkey(Hotkeys_Map["HotkeyBST"], (*) => RunMacro(DropBST, "Hotkey"), "Off")
-Hotkey(Hotkeys_Map["HotkeyReload"], (*) => RunMacro(ReloadAllWeapons, "Hotkey"), "Off")
-Hotkey(Hotkeys_Map["HotkeySpamRespawn"], (*) => RunMacro(SpamRespawn, "Hotkey"), "Off")
-Hotkey(Hotkeys_Map["HotkeyThermalVision"], (*) => RunMacro(ThermalVision, "Hotkey"), "Off")
-Hotkey(Hotkeys_Map["HotkeySuspendGame"], (*) => RunMacro(SuspendGame, "Hotkey"), "Off")
-Hotkey(Hotkeys_Map["HotkeyTerminateGame"], (*) => RunMacro(TerminateGame, "Hotkey"), "Off")
+Hotkey(Settings_Map["HOTKEY_BST"], (*) => RunMacro(DropBST, "Hotkey"), "Off")
+Hotkey(Settings_Map["HOTKEY_RELOAD"], (*) => RunMacro(ReloadAllWeapons, "Hotkey"), "Off")
+Hotkey(Settings_Map["HOTKEY_SPAMRESPAWN"], (*) => RunMacro(SpamRespawn, "Hotkey"), "Off")
+Hotkey(Settings_Map["HOTKEY_THERMALVISION"], (*) => RunMacro(ThermalVision, "Hotkey"), "Off")
+Hotkey(Settings_Map["HOTKEY_SUSPENDGAME"], (*) => RunMacro(SuspendGame, "Hotkey"), "Off")
+Hotkey(Settings_Map["HOTKEY_TERMINATEGAME"], (*) => RunMacro(TerminateGame, "Hotkey"), "Off")
 
 OpenMainGui()
 

@@ -5,15 +5,22 @@ MySettingsGui.Title := SETTINGS_SCRIPT_TITLE
 
 #Include "settings_reload.ahk"
 
-ReloadAllWeapons_Iterate_All__Radio := MySettingsGui.AddRadio("x50 y10 Checked", " Reload All Weapons (Method: Iterate)")
-ReloadAllWeapons_Iterate_All__Radio.OnEvent("Click", (*) => ReloadAllWeapons_Radio1_Click())
-ReloadAllWeapons_Heavy_Weapon__Radio := MySettingsGui.AddRadio("x50", " Reload All Weapons (Method: Heavy Weapon)")
-ReloadAllWeapons_Heavy_Weapon__Radio.OnEvent("Click", (*) => ReloadAllWeapons_Radio2_Click())
+ReloadAllWeapons_IterateAll__Radio := MySettingsGui.AddRadio("x50 y10", " Reload All Weapons (Method: Iterate)")
+ReloadAllWeapons_IterateAll__Radio.OnEvent("Click", (*) => ReloadAllWeapons_HeavyWeapon__Click())
+ReloadAllWeapons_HeavyWeapon__Radio := MySettingsGui.AddRadio("x50", " Reload All Weapons (Method: Heavy Weapon)")
+ReloadAllWeapons_HeavyWeapon__Radio.OnEvent("Click", (*) => ReloadAllWeapons_IterateAll__Click())
 
 MySettingsGui.SetFont("s10")
-ReloadSettings_Button := MySettingsGui.AddButton("x254 y6 w21 h21", "⚙")
+ReloadSettings_Button := MySettingsGui.AddButton("Disabled x254 y6 w21 h21", "⚙")
 ReloadSettings_Button.OnEvent("Click", (*) => OpenReloadSettingsGui())
 MySettingsGui.SetFont()
+
+if Settings_Map["RADIO_RELOAD_All_WEAPONS_METHOD"] == 2 {
+    ReloadAllWeapons_HeavyWeapon__Radio.Value := 1
+} else {
+    ReloadAllWeapons_IterateAll__Radio.Value := 1
+    ReloadSettings_Button.Enabled := true
+}
 
 AddSeparator(MySettingsGui, {text1: "x10"})
 
