@@ -1,2 +1,6 @@
-SetTitleMatchMode(3) ; Exact match mode
-SetStoreCapsLockMode(false)
+ProcessSetPriority("High")
+ProcessSetPriority("High", "GTA5.exe")
+SetTitleMatchMode(3)
+SetStoreCapsLockMode(0)
+KeyHistory(0)
+ListLines(0)

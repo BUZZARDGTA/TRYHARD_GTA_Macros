@@ -23,10 +23,10 @@ Hotkey(Settings_Map["HOTKEY_TERMINATEGAME"], (*) => RunMacro(TerminateGame, "Hot
 
 OpenMainGui()
 
-CenterElement(MyMainGui, Speed_Text)
-CenterElement(MyMainGui, Speed_Slider)
-CenterElements(MyMainGui,, DropBST_Button, ReloadAllWeapons_Button, SpamRespawn_Button)
-CenterElement(MyMainGui, ThermalVision_Button)
+CenterElement(MyMainGui, KeyRelease_Text)
+CenterElement(MyMainGui, KeyRelease_Slider)
+CenterElement(MyMainGui, KeyHold_Text)
+CenterElement(MyMainGui, KeyHold_Slider)
 CenterElements(MyMainGui,, SuspendGame_Button, TerminateGame_Button)
 CenterElements(MyMainGui, 0, ReloadAllWeapons_Edit, ReloadAllWeapons_UpDown)
 CenterElements(MyMainGui, 20, Settings_Button, OpenRepo_Button, Updater_Button)
@@ -37,10 +37,6 @@ CenterElements(MyMainGui,, KeyBindings_Button, Hotkeys_Button)
 CenterElements(MyMainGui, 30, LoadSettings_Button, SaveSettings_Button, ResetSettings_Button)
 
 ; Fixes a visual Glitch issue, using `Hidden` and then `.Visible` works too, but this is cleaner imo.
-DropBST_Button.Enabled := true
-ReloadAllWeapons_Button.Enabled := true
-SpamRespawn_Button.Enabled := true
-ThermalVision_Button.Enabled := true
 SuspendGame_Button.Enabled := true
 TerminateGame_Button.Enabled := true
 Settings_Button.Enabled := true

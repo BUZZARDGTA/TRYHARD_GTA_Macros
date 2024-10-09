@@ -26,11 +26,11 @@ Link_Click(Ctrl, ID, HREF) {
     Run(HREF)
 }
 
-UpdateMacroSpeed(GuiCtrlObj, Info) {
+UpdateKeyHoldMacroSpeed(GuiCtrlObj, Info) {
     global HasDisplayedMacroSpeedWarning1, HasDisplayedMacroSpeedWarning2
 
     UpdatedSliderValue := GuiCtrlObj.Value
-    Speed_Text.Value := GenerateMacroSpeedText(UpdatedSliderValue)
+    KeyHold_Text.Value := GenerateMacroSpeedText("Key-Hold", UpdatedSliderValue)
     message := ""
 
     if UpdatedSliderValue <= 20 {
@@ -51,17 +51,53 @@ UpdateMacroSpeed(GuiCtrlObj, Info) {
     }
 
     if not message == "" {
-        SetRunMacroDependencies(false, Speed_Slider)
+        SetRunMacroDependencies(false, KeyHold_Slider)
         MsgBox(
             message,
             SCRIPT_TITLE,
             "OK Iconi " . MSGBOX_SYSTEM_MODAL
         )
-        SetRunMacroDependencies(true, Speed_Slider)
+        SetRunMacroDependencies(true, KeyHold_Slider)
     }
 
-    Settings_Map["KEY_DELAY"] := UpdatedSliderValue
     Settings_Map["KEY_HOLD"] := UpdatedSliderValue
+}
+
+UpdateKeyReleaseMacroSpeed(GuiCtrlObj, Info) {
+    global HasDisplayedMacroSpeedWarning1, HasDisplayedMacroSpeedWarning2
+
+    UpdatedSliderValue := GuiCtrlObj.Value
+    KeyRelease_Text.Value := GenerateMacroSpeedText("Key-Release", UpdatedSliderValue)
+    message := ""
+
+    if UpdatedSliderValue <= 20 {
+        if not HasDisplayedMacroSpeedWarning2 {
+            message := "Legend said, only NASA computers can run this!"
+            HasDisplayedMacroSpeedWarning2 := true
+            HasDisplayedMacroSpeedWarning1 := true
+        }
+    } else if UpdatedSliderValue <= 30 {
+        if not HasDisplayedMacroSpeedWarning1 {
+            message := "These minimal speeds are recommended in small lobbies, with a limited number of players, as it may not work consistently otherwise."
+            HasDisplayedMacroSpeedWarning1 := true
+        }
+        HasDisplayedMacroSpeedWarning2 := false
+    } else {
+        HasDisplayedMacroSpeedWarning1 := false
+        HasDisplayedMacroSpeedWarning2 := false
+    }
+
+    if not message == "" {
+        SetRunMacroDependencies(false, KeyRelease_Slider)
+        MsgBox(
+            message,
+            SCRIPT_TITLE,
+            "OK Iconi " . MSGBOX_SYSTEM_MODAL
+        )
+        SetRunMacroDependencies(true, KeyRelease_Slider)
+    }
+
+    Settings_Map["KEY_RELEASE"] := UpdatedSliderValue
 }
 
 ReloadAllWeapons_Edit_Change(GuiCtrlObj, Info) {

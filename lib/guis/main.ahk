@@ -3,36 +3,38 @@ MyMainGui.Opt("+AlwaysOnTop")
 MyMainGui.Title := SCRIPT_TITLE
 
 ; Oh please do not ask me what the fuck I've done with x and y I just tried to make it works and it does.
-Speed_Text := MyMainGui.AddText("y+10 w108", GenerateMacroSpeedText(Settings_Map["KEY_DELAY"])) ; here keeping w108 is important to keep (e.g., a 3-digit number like 100) showing up correctly.
-MyMainGui.AddText("xm x32 y35", "[" . KEY_DELAY_SLOWEST . "ms]")
-Speed_Slider := MyMainGui.AddSlider("yp y30 w200", KEY_DELAY_SLOWEST - Settings_Map["KEY_DELAY"] + 20)
-Speed_Slider.Opt("Invert")
-Speed_Slider.Opt("Line5")
-Speed_Slider.Opt("Page10")
-Speed_Slider.Opt("Range" . KEY_DELAY_FASTEST . "-" . KEY_DELAY_SLOWEST)
-Speed_Slider.Opt("Thick30")
-Speed_Slider.Opt("TickInterval5")
-Speed_Slider.Opt("ToolTip")
-Speed_Slider.OnEvent("Change", UpdateMacroSpeed)
-MyMainGui.AddText("yp y35", "[" . KEY_DELAY_FASTEST . "ms]")
+KeyHold_Text := MyMainGui.AddText("y+10 w128", GenerateMacroSpeedText("Key-Hold", Settings_Map["KEY_HOLD"])) ; here keeping w{x} is important to keep (e.g., a 3-digit number like 100) showing up correctly.
+MyMainGui.AddText("xm x32 y35", "[" . KEY_HOLD_SLOWEST . "ms]")
+KeyHold_Slider := MyMainGui.AddSlider("yp y30 w200")
+KeyHold_Slider.Opt("Invert")
+KeyHold_Slider.Opt("Line5")
+KeyHold_Slider.Opt("Page10")
+KeyHold_Slider.Opt("Range" . KEY_HOLD_FASTEST . "-" . KEY_HOLD_SLOWEST)
+KeyHold_Slider.Opt("Thick30")
+KeyHold_Slider.Opt("TickInterval5")
+KeyHold_Slider.Opt("ToolTip")
+KeyHold_Slider.OnEvent("Change", UpdateKeyHoldMacroSpeed)
+KeyHold_Slider.Value := Settings_Map["KEY_HOLD"]
+MyMainGui.AddText("yp y35", "[" . KEY_HOLD_FASTEST . "ms]")
+; Dev-Note: alternative code --> https://discord.com/channels/288498150145261568/866440127320817684/1288240872630259815
+
+; Oh please do not ask me what the fuck I've done with x and y I just tried to make it works and it does.
+KeyRelease_Text := MyMainGui.AddText("x10 y+22 w141", GenerateMacroSpeedText("Key-Release", Settings_Map["KEY_RELEASE"])) ; here keeping w{x} is important to keep (e.g., a 3-digit number like 100) showing up correctly.
+MyMainGui.AddText("xm x32 y96", "[" . KEY_RELEASE_SLOWEST . "ms]")
+KeyRelease_Slider := MyMainGui.AddSlider("yp y90 w200")
+KeyRelease_Slider.Opt("Invert")
+KeyRelease_Slider.Opt("Line5")
+KeyRelease_Slider.Opt("Page10")
+KeyRelease_Slider.Opt("Range" . KEY_RELEASE_FASTEST . "-" . KEY_RELEASE_SLOWEST)
+KeyRelease_Slider.Opt("Thick30")
+KeyRelease_Slider.Opt("TickInterval5")
+KeyRelease_Slider.Opt("ToolTip")
+KeyRelease_Slider.OnEvent("Change", UpdateKeyReleaseMacroSpeed)
+KeyRelease_Slider.Value := Settings_Map["KEY_RELEASE"]
+MyMainGui.AddText("yp y96", "[" . KEY_RELEASE_FASTEST . "ms]")
 ; Dev-Note: alternative code --> https://discord.com/channels/288498150145261568/866440127320817684/1288240872630259815
 
 AddSeparator(MyMainGui, {text1: "x10"})
-
-DropBST_Button := MyMainGui.AddButton("Disabled", "Drop BST*")
-DropBST_Button.OnEvent("Click", (*) => RunMacro(DropBST, "Button"))
-DropBST_Button.ToolTip := "*Ensure you are in a CEO Organization."
-ReloadAllWeapons_Button := MyMainGui.AddButton("Disabled x+10", "Reload All Weapons*")
-ReloadAllWeapons_Button.OnEvent("Click", (*) => RunMacro(ReloadAllWeapons, "Button"))
-ReloadAllWeapons_Button.ToolTip := "*You can adjust the number of weapon type iterations in the Settings."
-SpamRespawn_Button := MyMainGui.AddButton("Disabled x+10", "Spam Respawn*")
-SpamRespawn_Button.OnEvent("Click", (*) => RunMacro(SpamRespawn, "Button"))
-SpamRespawn_Button.ToolTip := "*Use this on the death screen after being killed to speed up your respawn time."
-ThermalVision_Button := MyMainGui.AddButton("Disabled x10", "Thermal Vision*")
-ThermalVision_Button.OnEvent("Click", (*) => RunMacro(ThermalVision, "Button"))
-ThermalVision_Button.ToolTip := "*Toogles your Combat Helmet, Thermal Vision ON/OFF.`nYou must wear a Thermal Vision Combat Helmet (Dual/Quad Lens) with the Visor in the down position.`n`nPlease note that there is a game bug where the helmet doesn't appear in the 'Interaction Menu' > 'Accessories'.`nYou will need to resolve this issue on your own."
-
-MyMainGui.AddText("x10")
 
 SuspendGame_Button := MyMainGui.AddButton("Disabled", "Suspend Game*")
 SuspendGame_Button.OnEvent("Click", (*) => RunMacro(SuspendGame, "Button"))

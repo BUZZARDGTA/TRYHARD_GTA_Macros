@@ -60,6 +60,31 @@ CenterElements(GuiObj, spacing := 10, elements*) {
     }
 }
 
+ApplySettings() {
+    for key, value in Settings_Map {
+        if key == "KEY_HOLD" {
+            KeyHold_Text.Value := GenerateMacroSpeedText("Key-Hold", Settings_Map["KEY_HOLD"])
+            KeyHold_Slider.Value := Settings_Map["KEY_HOLD"]
+        } else if key == "KEY_RELEASE" {
+            KeyRelease_Text.Value := GenerateMacroSpeedText("Key-Release", Settings_Map["KEY_RELEASE"])
+            KeyRelease_Slider.Value := Settings_Map["KEY_RELEASE"]
+        }
+        ;} else if key == "RADIO_RELOAD_All_WEAPONS_METHOD" {
+        ;} else if key == "RADIO_RELOAD_All_WEAPONS_ITERATE_DIRECTION" {
+        ;} else if key == "EDIT_RELOAD_All_WEAPONS" {
+        ;
+        ;} else if key == "HOTKEY_BST" {
+        ;} else if key == "HOTKEY_RELOAD" {
+        ;} else if key == "HOTKEY_SPAMRESPAWN" {
+        ;} else if key == "HOTKEY_THERMALVISION" {
+        ;} else if key == "HOTKEY_SUSPENDGAME" {
+        ;} else if key == "HOTKEY_TERMINATEGAME" {
+        ;
+        ;} else if key == "KEY_BINDING__INTERACTION_MENU" {
+        ;}
+    }
+}
+
 LoadSettings(Options := {}) {
     Options.IsScriptStartup := Options.HasOwnProp("IsScriptStartup") ? Options.IsScriptStartup : false
 
@@ -81,6 +106,7 @@ LoadSettings(Options := {}) {
         }
         file.Close()
         if not Options.IsScriptStartup {
+            ApplySettings()
             MsgBox(
                 "Saved settings loaded successfully!`n`nThey are now appplied.",
                 SETTINGS_SCRIPT_TITLE,
@@ -123,7 +149,7 @@ SaveSettings() {
 }
 
 ResetSettings() {
-    Settings_Map := DEFAULT_SETTINGS__MAP
+    Settings_Map := DEFAULT_SETTINGS__MAP.Clone()
 
     file := false
     try {
@@ -134,6 +160,7 @@ ResetSettings() {
             file.WriteLine(key . "=" . value)
         }
         file.Close()
+        ApplySettings()
         MsgBox(
             "Settings reset successfully!`n`nThey will be auto-applied upon next times.",
             SETTINGS_SCRIPT_TITLE,
@@ -148,16 +175,13 @@ ResetSettings() {
     )
 }
 
-GenerateMacroSpeedText(NewSpeed) {
-    return "Macro Speed [" . NewSpeed . "ms]:"
+GenerateMacroSpeedText(SpeedType, NewSpeed) {
+    return SpeedType . " Speed [" . NewSpeed . "ms]:"
 }
 
 SetRunMacroDependencies(State, ForceFocus := "") {
-    Speed_Slider.Enabled := State
-    DropBST_Button.Enabled := State
-    ReloadAllWeapons_Button.Enabled := State
-    SpamRespawn_Button.Enabled := State
-    ThermalVision_Button.Enabled := State
+    KeyHold_Slider.Enabled := State
+    KeyRelease_Slider.Enabled := State
     SuspendGame_Button.Enabled := State
 
     ReloadAllWeapons_IterateAll__Radio.Enabled := State
@@ -352,6 +376,12 @@ GetValidGTAwinRunning(Options := {}) {
 }
 
 RunMacro(macroFunc, triggerSource) {
+    ; If Alt + F4 is pressed, prevent the macro from running and pass the keystroke back to the system.
+    if GetKeyState("Alt", "P") and GetKeyState("F4", "P") {
+        SendEvent("{Alt Down}{F4}{Alt Up}")
+        return false
+    }
+
     global isMacroRunning
 
     if isMacroRunning {
@@ -359,20 +389,17 @@ RunMacro(macroFunc, triggerSource) {
     }
     isMacroRunning := true
     SetRunMacroDependencies(false)
-
     result := macroFunc(triggerSource)
-
-    isMacroRunning := false
     SetRunMacroDependencies(true)
-
+    isMacroRunning := false
 
     return result
 }
 
 SendKeyWithDelay(key, holdTime, releaseTime) {
-    Send("{" key " down}")
+    Send("{Blind}{" . key . " down}")
     Sleep(holdTime)
-    Send("{" key " up}")
+    Send("{Blind}{" . key . " up}")
     Sleep(releaseTime)
 }
 
@@ -382,7 +409,7 @@ Takes a list of keystrokes where each keystroke includes:
 - `count`: Number of times the key should be pressed
 - `key`: The key to be pressed
 - `hold`: Duration to hold the key
-- `delay`: Time to wait between key presses
+- `release`: Time to wait between key presses
 
 Checks if the GTA V window is active before sending each keystroke.
 Displays an error message and aborts if either the user interrupted the macro, or if the GTA V window is no longer active or .
@@ -413,7 +440,7 @@ ProcessGTAKeystrokes(triggerSource, Keystrokes) {
     if triggerSource == "Button" and not WinActive("ahk_id " ThisGtaWindowID) {
         MyMainGui.Minimize()
         WinActivate("ahk_id " ThisGtaWindowID)
-        Sleep(Settings_Map["KEY_DELAY"] * 5)
+        Sleep(100)
         if not WinActive("ahk_id " ThisGtaWindowID) {
             MsgBox(
                 "ERROR: Failed to activate GTA V window, aborting process.",
@@ -423,14 +450,14 @@ ProcessGTAKeystrokes(triggerSource, Keystrokes) {
             return false
         }
         ToolTip()
-        Sleep(Settings_Map["KEY_DELAY"] * 10)
+        Sleep(500)
     }
 
     for index, Keystroke in Keystrokes {
         ; Apply default values if not provided in the Keystroke properties.
         Keystroke.count := Keystroke.HasOwnProp("count") ? Keystroke.count : 1
         Keystroke.hold := Keystroke.HasOwnProp("hold") ? Keystroke.hold : Settings_Map["KEY_HOLD"]
-        Keystroke.delay := Keystroke.HasOwnProp("delay") ? Keystroke.delay : Settings_Map["KEY_DELAY"]
+        Keystroke.release := Keystroke.HasOwnProp("release") ? Keystroke.release : Settings_Map["KEY_RELEASE"]
 
         loop Keystroke.count {
             if not GetValidGTAwinRunning({ hwnd: ThisGtaWindowID, AndActive: true }) {
@@ -442,16 +469,16 @@ ProcessGTAKeystrokes(triggerSource, Keystrokes) {
                 return false
             }
 
-            ; Set delay to 0 for the last Keystroke
+            ; Set release to 0 for the last Keystroke
             if (A_Index == Keystroke.count and index == Keystrokes.Length) {
-                Keystroke.delay := 0
+                Keystroke.release := 0
             }
 
             if CheckUserInputStopConditions() {
                 return false
             }
 
-            SendKeyWithDelay(Keystroke.key, Keystroke.hold, Keystroke.delay)
+            SendKeyWithDelay(Keystroke.key, Keystroke.hold, Keystroke.release)
         }
     }
 
@@ -636,7 +663,6 @@ GetHotkeysObjects_Map(HotkeyName := "") {
         "HOTKEY_BST", {
             Hotkey: Settings_Map["HOTKEY_BST"],
             DefaultHotkey: DEFAULT_SETTINGS__MAP["HOTKEY_BST"],
-            Button: DropBST_Button,
             HotkeyEdit: HotkeyBST_HotkeyEdit,
             ApplyButton: HotkeyBST_ApplyButton,
             ResetButton: HotkeyBST_ResetButton,
@@ -646,7 +672,6 @@ GetHotkeysObjects_Map(HotkeyName := "") {
         "HOTKEY_RELOAD", {
             Hotkey: Settings_Map["HOTKEY_RELOAD"],
             DefaultHotkey: DEFAULT_SETTINGS__MAP["HOTKEY_RELOAD"],
-            Button: ReloadAllWeapons_Button,
             HotkeyEdit: HotkeyReload_HotkeyEdit,
             ApplyButton: HotkeyReload_ApplyButton,
             ResetButton: HotkeyReload_ResetButton,
@@ -656,7 +681,6 @@ GetHotkeysObjects_Map(HotkeyName := "") {
         "HOTKEY_SPAMRESPAWN", {
             Hotkey: Settings_Map["HOTKEY_SPAMRESPAWN"],
             DefaultHotkey: DEFAULT_SETTINGS__MAP["HOTKEY_SPAMRESPAWN"],
-            Button: SpamRespawn_Button,
             HotkeyEdit: HotkeySpamRespawn_HotkeyEdit,
             ApplyButton: HotkeySpamRespawn_ApplyButton,
             ResetButton: HotkeySpamRespawn_ResetButton,
@@ -666,7 +690,6 @@ GetHotkeysObjects_Map(HotkeyName := "") {
         "HOTKEY_THERMALVISION", {
             Hotkey: Settings_Map["HOTKEY_THERMALVISION"],
             DefaultHotkey: DEFAULT_SETTINGS__MAP["HOTKEY_THERMALVISION"],
-            Button: ThermalVision_Button,
             HotkeyEdit: HotkeyThermalVision_HotkeyEdit,
             ApplyButton: HotkeyThermalVision_ApplyButton,
             ResetButton: HotkeyThermalVision_ResetButton,
