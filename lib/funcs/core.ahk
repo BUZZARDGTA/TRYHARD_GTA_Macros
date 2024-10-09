@@ -396,13 +396,6 @@ RunMacro(macroFunc, triggerSource) {
     return result
 }
 
-SendKeyWithDelay(key, holdTime, releaseTime) {
-    Send("{Blind}{" . key . " down}")
-    Sleep(holdTime)
-    Send("{Blind}{" . key . " up}")
-    Sleep(releaseTime)
-}
-
 /*
 Processes a sequence of keystrokes for the game.
 Takes a list of keystrokes where each keystroke includes:
@@ -458,6 +451,7 @@ ProcessGTAKeystrokes(triggerSource, Keystrokes) {
         Keystroke.count := Keystroke.HasOwnProp("count") ? Keystroke.count : 1
         Keystroke.hold := Keystroke.HasOwnProp("hold") ? Keystroke.hold : Settings_Map["KEY_HOLD"]
         Keystroke.release := Keystroke.HasOwnProp("release") ? Keystroke.release : Settings_Map["KEY_RELEASE"]
+        Keystroke.state := Keystroke.HasOwnProp("state") ? Keystroke.state : ""
 
         loop Keystroke.count {
             if not GetValidGTAwinRunning({ hwnd: ThisGtaWindowID, AndActive: true }) {
@@ -478,7 +472,18 @@ ProcessGTAKeystrokes(triggerSource, Keystrokes) {
                 return false
             }
 
-            SendKeyWithDelay(Keystroke.key, Keystroke.hold, Keystroke.release)
+            if Keystroke.state == "hold" {
+                Send("{Blind}{" . Keystroke.key . " down}")
+                Sleep(Keystroke.hold)
+            } else if Keystroke.state == "release" {
+                Send("{Blind}{" . Keystroke.key . " up}")
+                Sleep(Keystroke.release)
+            } else {
+                Send("{Blind}{" . Keystroke.key . " down}")
+                Sleep(Keystroke.hold)
+                Send("{Blind}{" . Keystroke.key . " up}")
+                Sleep(Keystroke.release)
+            }
         }
     }
 
@@ -487,12 +492,15 @@ ProcessGTAKeystrokes(triggerSource, Keystrokes) {
 
 DropBST(triggerSource) {
     BST_Keystrokes := [
+        { key: "Enter", state: "hold" },
         { key: Settings_Map["KEY_BINDING__INTERACTION_MENU"] }, ; in [Interaction Menu]
-        { key: "Enter" }, ; in [SecuroServ CEO]
+        { key: "Enter", state: "release" }, ; in [SecuroServ CEO]
+        { key: "Enter", state: "hold" },
         { key: "Down", count: 4 }, ; hover [CEO Abilities]
-        { key: "Enter" }, ; in [CEO Abilities]
+        { key: "Enter", state: "release" }, ; in [CEO Abilities]
+        { key: "Enter", state: "hold" },
         { key: "Down" }, ; hover [Drop Bull Shark]
-        { key: "Enter" } ; select [Drop Bull Shark]
+        { key: "Enter", state: "release" } ; select [Drop Bull Shark]
     ]
 
     return ProcessGTAKeystrokes(triggerSource, BST_Keystrokes)
@@ -509,9 +517,11 @@ ReloadAllWeapons(triggerSource) {
     Reload_Keystrokes := []
 
     Reload_Keystrokes.Push(
+        { key: "Enter", state: "hold" },
         { key: Settings_Map["KEY_BINDING__INTERACTION_MENU"] }, ; in [Interaction Menu]
         { key: "Down", count: 4 }, ; hover [Health and Ammo]
-        { key: "Enter", count: 2 } ; in [Health and Ammo] and [Ammo]
+        { key: "Enter", state: "release" }, ; in [Health and Ammo]
+        { key: "Enter" } ; in [Ammo]
     )
 
     if ReloadAllWeapons_HeavyWeapon__Radio.Value == 1 {
@@ -555,11 +565,13 @@ SpamRespawn(triggerSource) {
 
 ThermalVision(triggerSource) {
     ThermalVision_Keystrokes := [
+        { key: "Enter", state: "hold" },
         { key: Settings_Map["KEY_BINDING__INTERACTION_MENU"] }, ; in [Interaction Menu]
         { key: "Down", count: 5 }, ; hover [Appearance]
-        { key: "Enter" }, ; select [Appearance]
+        { key: "Enter", state: "release" }, ; select [Appearance]
+        { key: "Enter", state: "hold" },
         { key: "Down" }, ; hover [Accessories]
-        { key: "Enter" }, ; select [Accessories]
+        { key: "Enter", state: "release" }, ; select [Accessories]
         { key: "Down", count: 4 }, ; hover [Helmets]
         { key: "Space" }, ; select [Helmets]
         { key: Settings_Map["KEY_BINDING__INTERACTION_MENU"] } ; exit [Interaction Menu]
