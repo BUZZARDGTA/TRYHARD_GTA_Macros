@@ -51,6 +51,7 @@ Macros for TRYHARD players using AutoHotkey v2.
 
 # Known Bug (unlikely to be fixed)
 
+- Macros are running slower then other similar AHK scripts, I still don't understand why.
 - The macro does not consistently abort when the following stop keys are <ins>**quickly**</ins> pressed:<br>
 `LButton`, `RButton`, `Enter`, `Escape` and `Backspace`<br>
 While this currently randomely works, the implementation is not optimized.<br>
