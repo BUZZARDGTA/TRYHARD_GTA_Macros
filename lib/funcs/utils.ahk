@@ -18,8 +18,9 @@ Pluralize(count, singular, plural := "") {
 
 InArray(value, arr) {
     for element in arr {
-        if (value == element)
+        if value == element {
             return true
+        }
     }
     return false
 }

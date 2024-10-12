@@ -2,6 +2,7 @@
 MySettingsGui.OnEvent("Close", (*) => ReEnableGui(MyMainGui))
 MySettingsGui.Opt("+AlwaysOnTop")
 MySettingsGui.Title := SETTINGS_SCRIPT_TITLE
+MyGuis.Push(MySettingsGui)
 
 #Include "settings_reload.ahk"
 

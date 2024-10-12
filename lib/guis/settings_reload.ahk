@@ -2,6 +2,7 @@
 MyReloadSettingsGui.OnEvent("Close", (*) => ReEnableGui(MySettingsGui))
 MyReloadSettingsGui.Opt("+AlwaysOnTop")
 MyReloadSettingsGui.Title := SETTINGS_SCRIPT_TITLE
+MyGuis.Push(MyReloadSettingsGui)
 
 MyReloadSettingsGui.AddText("x100", "Direction: ")
 ReloadAllWeapons_IterateAll__Direction_Left__Radio := MyReloadSettingsGui.AddRadio("x+10", " Left")

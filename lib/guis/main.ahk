@@ -1,6 +1,7 @@
 ﻿MyMainGui := Gui()
 MyMainGui.Opt("+AlwaysOnTop")
 MyMainGui.Title := SCRIPT_TITLE
+MyGuis.Push(MyMainGui)
 
 ; Oh please do not ask me what the fuck I've done with x and y I just tried to make it works and it does.
 KeyHold_Text := MyMainGui.AddText("y+10 w128", GenerateMacroSpeedText("Key-Hold", Settings_Map["KEY_HOLD"])) ; here keeping w{x} is important to keep (e.g., a 3-digit number like 100) showing up correctly.
@@ -12,7 +13,6 @@ KeyHold_Slider.Opt("Page10")
 KeyHold_Slider.Opt("Range" . KEY_HOLD_FASTEST . "-" . KEY_HOLD_SLOWEST)
 KeyHold_Slider.Opt("Thick30")
 KeyHold_Slider.Opt("TickInterval5")
-KeyHold_Slider.Opt("ToolTip")
 KeyHold_Slider.OnEvent("Change", UpdateKeyHoldMacroSpeed)
 KeyHold_Slider.Value := Settings_Map["KEY_HOLD"]
 MyMainGui.AddText("yp y35", "[" . KEY_HOLD_FASTEST . "ms]")
@@ -28,7 +28,6 @@ KeyRelease_Slider.Opt("Page10")
 KeyRelease_Slider.Opt("Range" . KEY_RELEASE_FASTEST . "-" . KEY_RELEASE_SLOWEST)
 KeyRelease_Slider.Opt("Thick30")
 KeyRelease_Slider.Opt("TickInterval5")
-KeyRelease_Slider.Opt("ToolTip")
 KeyRelease_Slider.OnEvent("Change", UpdateKeyReleaseMacroSpeed)
 KeyRelease_Slider.Value := Settings_Map["KEY_RELEASE"]
 MyMainGui.AddText("yp y96", "[" . KEY_RELEASE_FASTEST . "ms]")
@@ -39,9 +38,11 @@ AddSeparator(MyMainGui, {text1: "x10"})
 SuspendGame_Button := MyMainGui.AddButton("Disabled", "Suspend Game*")
 SuspendGame_Button.OnEvent("Click", (*) => RunMacro(SuspendGame, "Button"))
 SuspendGame_Button.ToolTip := "*You can use this to force yourself into a solo public session.`nThis is especially useful when making risky sales in public lobbies."
+TooltipElementHwnds.Push(SuspendGame_Button.Hwnd)
 TerminateGame_Button := MyMainGui.AddButton("Disabled x+0", "Terminate Game*")
 TerminateGame_Button.OnEvent("Click", (*) => RunMacro(TerminateGame, "Button"))
 TerminateGame_Button.ToolTip := "*You can use this to select the Casino Lucky Wheel slot you want.`nIf it doesn't match your choice, close the game and try again as many times as needed."
+TooltipElementHwnds.Push(TerminateGame_Button.Hwnd)
 
 AddSeparator(MyMainGui, {text1: "x10"})
 

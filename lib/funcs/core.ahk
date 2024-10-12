@@ -60,28 +60,54 @@ CenterElements(GuiObj, spacing := 10, elements*) {
     }
 }
 
+ShowTooltip(Text) {
+    global IsAnyTooltipDisplaying
+
+    IsAnyTooltipDisplaying := true
+    ToolTip(Text)
+}
+
+HideTooltip() {
+    global IsAnyTooltipDisplaying
+
+    if IsAnyTooltipDisplaying {
+        IsAnyTooltipDisplaying := false
+        ToolTip()
+    }
+}
+
 ApplySettings() {
     for key, value in Settings_Map {
         if key == "KEY_HOLD" {
-            KeyHold_Text.Value := GenerateMacroSpeedText("Key-Hold", Settings_Map["KEY_HOLD"])
-            KeyHold_Slider.Value := Settings_Map["KEY_HOLD"]
+            KeyHold_Text.Value := GenerateMacroSpeedText("Key-Hold", value)
+            KeyHold_Slider.Value := value
         } else if key == "KEY_RELEASE" {
-            KeyRelease_Text.Value := GenerateMacroSpeedText("Key-Release", Settings_Map["KEY_RELEASE"])
-            KeyRelease_Slider.Value := Settings_Map["KEY_RELEASE"]
-        }
-        ;} else if key == "RADIO_RELOAD_All_WEAPONS_METHOD" {
-        ;} else if key == "RADIO_RELOAD_All_WEAPONS_ITERATE_DIRECTION" {
-        ;} else if key == "EDIT_RELOAD_All_WEAPONS" {
-        ;
+            KeyRelease_Text.Value := GenerateMacroSpeedText("Key-Release", value)
+            KeyRelease_Slider.Value := value
+        } else if key == "RADIO_RELOAD_All_WEAPONS_METHOD" {
+            if value == 2 {
+                ReloadAllWeapons_HeavyWeapon__Radio.Value := 1
+            } else {
+                ReloadAllWeapons_IterateAll__Radio.Value := 1
+                ReloadSettings_Button.Enabled := true
+            }
+        } else if key == "RADIO_RELOAD_All_WEAPONS_ITERATE_DIRECTION" {
+            if value == 2 {
+                ReloadAllWeapons_IterateAll__Direction_Right__Radio.Value := 1
+            } else {
+                ReloadAllWeapons_IterateAll__Direction_Left__Radio.Value := 1
+            }
+        } else if key == "EDIT_RELOAD_All_WEAPONS" {
+            ReloadAllWeapons_Edit.Value := value
         ;} else if key == "HOTKEY_BST" {
         ;} else if key == "HOTKEY_RELOAD" {
         ;} else if key == "HOTKEY_SPAMRESPAWN" {
         ;} else if key == "HOTKEY_THERMALVISION" {
         ;} else if key == "HOTKEY_SUSPENDGAME" {
         ;} else if key == "HOTKEY_TERMINATEGAME" {
-        ;
         ;} else if key == "KEY_BINDING__INTERACTION_MENU" {
         ;}
+        }
     }
 }
 
@@ -235,14 +261,12 @@ ReEnableGui(GuiToReEnable) {
 
 MinimizeAllGuis() {
     MinimizeGui(GuiObj) {
-        static WS_VISIBLE := 0x10000000
-
         if not WinExist(GuiObj.Hwnd) {
             return
         }
 
         Style := WinGetStyle(GuiObj.Hwnd)
-        if not (Style & WS_VISIBLE) {
+        if not (Style & WindowStyles.Visible) {
             return
         }
 
@@ -258,14 +282,12 @@ MinimizeAllGuis() {
 
 RestoreAllGuis() {
     RestoreGui(GuiObj) {
-        static WS_VISIBLE := 0x10000000
-
         if not WinExist(GuiObj.Hwnd) {
             return
         }
 
         Style := WinGetStyle(GuiObj.Hwnd)
-        if not (Style & WS_VISIBLE)  {
+        if not (Style & WindowStyles.Visible)  {
             return
         }
 
@@ -442,7 +464,6 @@ ProcessGTAKeystrokes(triggerSource, Keystrokes) {
             )
             return false
         }
-        ToolTip()
         Sleep(500)
     }
 
@@ -882,84 +903,6 @@ ReloadAllWeapons_Edit__DisplayErrorAndReset(GuiCtrlObj) {
     )
     GuiCtrlObj.Value := Settings_Map["EDIT_RELOAD_All_WEAPONS"]
     SetRunMacroDependencies(true)
-}
-
-MainLoop() {
-    ; START UpdateTrayMenuShowHideOptionState
-    if WinExist(SCRIPT_WINDOW_IDENTIFIER) {
-        ItemName := "Hide"
-        ActionFunc := (*) => MyMainGui.Hide()
-        RenameFrom := "Show"
-    } else {
-        ItemName := "Show"
-        ActionFunc := (*) => MyMainGui.Show()
-        RenameFrom := "Hide"
-    }
-
-    try {
-        A_TrayMenu.Rename(RenameFrom, ItemName)
-    } catch error as err {
-        if not (err.What == "Menu.Prototype.Rename" and err.Message == "Nonexistent menu item.") {
-            throw err
-        }
-    } else {
-        A_TrayMenu.Add(ItemName, ActionFunc)
-    } finally {
-        A_TrayMenu.Default := ItemName
-    }
-    ; END UpdateTrayMenuShowHideOptionState
-
-    ; START Settings
-    if ReloadAllWeapons_HeavyWeapon__Radio.Value == 1 {
-        Settings_Map["RADIO_RELOAD_All_WEAPONS_METHOD"] := 2
-    } else {
-        Settings_Map["RADIO_RELOAD_All_WEAPONS_METHOD"] := 1
-    }
-
-    if ReloadAllWeapons_IterateAll__Direction_Right__Radio.Value == 1 {
-        Settings_Map["RADIO_RELOAD_All_WEAPONS_ITERATE_DIRECTION"] := 2
-    } else {
-        Settings_Map["RADIO_RELOAD_All_WEAPONS_ITERATE_DIRECTION"] := 1
-    }
-    ; END Settings
-
-    ; START IsGTARunning_Callback
-    /*
-    HotIfWinActive(GTA_WINDOW_IDENTIFIER)
-    Known-Bug: After restarting the game this method ain't working anymore.
-    So I fixed it by implementing my own one in the MainLoop just bellow.
-    */
-    ; Only enable Hotkeys when the GTA_WINDOW_IDENTIFIER conditions are found.
-    global gtaWindowID
-
-    gtaWindowID := GetValidGTAwinRunning()
-
-    for HotkeyName, Data in GetHotkeysObjects_Map() {
-        ToggleButton := Data.ToggleButton
-        _Hotkey := Data.Hotkey
-
-        if (ToggleButton.Text == "Disable") {
-            try {
-                Hotkey(_Hotkey, (gtaWindowID and WinActive(gtaWindowID)) ? "On" : "Off")
-            } catch error as err {
-                if not ((err.What == "Hotkey") and (err.Message == "Nonexistent hotkey.")) {
-                    throw err
-                }
-            }
-        }
-    }
-    ; END IsGTARunning_Callback
-
-    ; START mainGUI
-    global MyMainGui, prevX, prevY, prevW, prevH
-
-    MyMainGui.GetPos(&x, &y, &w, &h)
-
-    if (x != prevX || y != prevY || w != prevW || h != prevH) {
-        ToolTip()
-        prevX := x, prevY := y, prevW := w, prevH := h
-    }
-    ; END mainGUI
 }
 
 ApplyKeyBinding(KeyBindingToApply) {

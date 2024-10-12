@@ -50,4 +50,4 @@ A_TrayMenu.Insert("2&")
 
 RunUpdater("STARTUP")
 
-SetTimer(MainLoop, 100)
+#Include "lib\mainloop.ahk"

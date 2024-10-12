@@ -2,6 +2,7 @@
 MyKeybindSettingsGui.OnEvent("Close", (*) => ReEnableGui(MySettingsGui))
 MyKeybindSettingsGui.Opt("+AlwaysOnTop")
 MyKeybindSettingsGui.Title := SETTINGS_SCRIPT_TITLE
+MyGuis.Push(MyKeybindSettingsGui)
 
 MyKeybindSettingsGui.AddText(, 'In-game key binding for "Interaction Menu" :')
 KeyBinding_Interaction_Menu__HotkeyEdit := MyKeybindSettingsGui.AddEdit("w100 Limit17", Settings_Map["KEY_BINDING__INTERACTION_MENU"])

@@ -6,16 +6,18 @@
 On_WM_MOUSEMOVE(wParam, lParam, msg, hwnd) {
     static PrevHwnd := 0
 
-    if not (hwnd == PrevHwnd) {
-        ToolTip()
+    if !hwnd == PrevHwnd {
+        HideTooltip()
+
         CurrControl := GuiCtrlFromHwnd(hwnd)
         if CurrControl {
             if not CurrControl.HasProp("ToolTip") {
                 return
             }
+
             Text := CurrControl.ToolTip
-            SetTimer(() => ToolTip(Text), -TOOLTIP_DISPLAY_TIME)
-            SetTimer(() => ToolTip(), -TOOLTIP_HIDE_TIME)
+            SetTimer(() => ShowTooltip(Text), -TOOLTIP_DISPLAY_TIME)
+            SetTimer(() => HideTooltip(), -TOOLTIP_HIDE_TIME)
         }
 
         PrevHwnd := hwnd
@@ -27,27 +29,27 @@ Link_Click(Ctrl, ID, HREF) {
 }
 
 UpdateKeyHoldMacroSpeed(GuiCtrlObj, Info) {
-    global HasDisplayedMacroSpeedWarning1, HasDisplayedMacroSpeedWarning2
+    global HasDisplayedKeyHoldMacroSpeedWarning1, HasDisplayedKeyHoldMacroSpeedWarning2
 
     UpdatedSliderValue := GuiCtrlObj.Value
     KeyHold_Text.Value := GenerateMacroSpeedText("Key-Hold", UpdatedSliderValue)
     message := ""
 
     if UpdatedSliderValue <= 20 {
-        if not HasDisplayedMacroSpeedWarning2 {
+        if not HasDisplayedKeyHoldMacroSpeedWarning2 {
             message := "Legend said, only NASA computers can run this!"
-            HasDisplayedMacroSpeedWarning2 := true
-            HasDisplayedMacroSpeedWarning1 := true
+            HasDisplayedKeyHoldMacroSpeedWarning1 := true
+            HasDisplayedKeyHoldMacroSpeedWarning2 := true
         }
     } else if UpdatedSliderValue <= 30 {
-        if not HasDisplayedMacroSpeedWarning1 {
+        if not HasDisplayedKeyHoldMacroSpeedWarning1 {
             message := "These minimal speeds are recommended in small lobbies, with a limited number of players, as it may not work consistently otherwise."
-            HasDisplayedMacroSpeedWarning1 := true
+            HasDisplayedKeyHoldMacroSpeedWarning1 := true
         }
-        HasDisplayedMacroSpeedWarning2 := false
+        HasDisplayedKeyHoldMacroSpeedWarning2 := false
     } else {
-        HasDisplayedMacroSpeedWarning1 := false
-        HasDisplayedMacroSpeedWarning2 := false
+        HasDisplayedKeyHoldMacroSpeedWarning1 := false
+        HasDisplayedKeyHoldMacroSpeedWarning2 := false
     }
 
     if not message == "" {
@@ -64,27 +66,27 @@ UpdateKeyHoldMacroSpeed(GuiCtrlObj, Info) {
 }
 
 UpdateKeyReleaseMacroSpeed(GuiCtrlObj, Info) {
-    global HasDisplayedMacroSpeedWarning1, HasDisplayedMacroSpeedWarning2
+    global HasDisplayedKeyReleaseMacroSpeedWarning1, HasDisplayedKeyReleaseMacroSpeedWarning2
 
     UpdatedSliderValue := GuiCtrlObj.Value
     KeyRelease_Text.Value := GenerateMacroSpeedText("Key-Release", UpdatedSliderValue)
     message := ""
 
     if UpdatedSliderValue <= 20 {
-        if not HasDisplayedMacroSpeedWarning2 {
+        if not HasDisplayedKeyReleaseMacroSpeedWarning2 {
             message := "Legend said, only NASA computers can run this!"
-            HasDisplayedMacroSpeedWarning2 := true
-            HasDisplayedMacroSpeedWarning1 := true
+            HasDisplayedKeyReleaseMacroSpeedWarning1 := true
+            HasDisplayedKeyReleaseMacroSpeedWarning2 := true
         }
     } else if UpdatedSliderValue <= 30 {
-        if not HasDisplayedMacroSpeedWarning1 {
+        if not HasDisplayedKeyReleaseMacroSpeedWarning1 {
             message := "These minimal speeds are recommended in small lobbies, with a limited number of players, as it may not work consistently otherwise."
-            HasDisplayedMacroSpeedWarning1 := true
+            HasDisplayedKeyReleaseMacroSpeedWarning1 := true
         }
-        HasDisplayedMacroSpeedWarning2 := false
+        HasDisplayedKeyReleaseMacroSpeedWarning2 := false
     } else {
-        HasDisplayedMacroSpeedWarning1 := false
-        HasDisplayedMacroSpeedWarning2 := false
+        HasDisplayedKeyReleaseMacroSpeedWarning1 := false
+        HasDisplayedKeyReleaseMacroSpeedWarning2 := false
     }
 
     if not message == "" {

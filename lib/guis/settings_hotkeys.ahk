@@ -2,6 +2,7 @@
 MyHotkeySettingsGui.OnEvent("Close", (*) => ReEnableGui(MySettingsGui))
 MyHotkeySettingsGui.Opt("+AlwaysOnTop")
 MyHotkeySettingsGui.Title := SETTINGS_SCRIPT_TITLE
+MyGuis.Push(MyHotkeySettingsGui)
 
 MyHotkeySettingsGui.AddText(, 'Hotkey for "Drop BST" :')
 HotkeyBST_HotkeyEdit := MyHotkeySettingsGui.AddEdit("w100 Limit17", Settings_Map["HOTKEY_BST"])
