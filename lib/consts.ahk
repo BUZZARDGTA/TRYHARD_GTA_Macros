@@ -1,7 +1,7 @@
 DEBUG_ENABLED := false
 
 SCRIPT_TITLE := "TRYHARD Macros"
-SCRIPT_VERSION := "v1.2.6 - 12/10/2024 (02:36)"
+SCRIPT_VERSION := "v1.2.6 - 12/10/2024 (03:00)"
 SCRIPT_REPOSITORY := "https://github.com/BUZZARDGTA/TRYHARD_GTA_Macros"
 SCRIPT_LATEST_RELEASE_URL := SCRIPT_REPOSITORY . "/releases/latest"
 SCRIPT_VERSION_UPDATER_URL := "https://raw.githubusercontent.com/BUZZARDGTA/TRYHARD_GTA_Macros/refs/heads/main/VERSION.txt"

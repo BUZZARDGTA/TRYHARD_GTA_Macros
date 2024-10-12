@@ -18,7 +18,6 @@
 }
 
 
-PrevHwnd := 0
 clicked := false
 
 
@@ -94,8 +93,6 @@ while true {
     if (IsAnyTooltipDisplaying and not InArray(OutputVarControl, TooltipElementHwnds)) {
         HideTooltip()
     }
-
-    PrevHwnd := OutputVarControl
     ; END mainGUI
 
     ; START GUI FlashWindow
@@ -128,4 +125,6 @@ while true {
         clicked := false
     }
     ; END GUI FlashWindow
+
+    Sleep(1)
 }
